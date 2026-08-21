@@ -1,0 +1,47 @@
+.footer {
+  border-top: 1px solid var(--line);
+  background: var(--bg-raised);
+  padding-block: 40px 48px;
+}
+
+.inner {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1.4fr);
+  gap: 32px;
+  align-items: start;
+}
+
+.taglineRow {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.tagline {
+  font-weight: 700;
+  font-size: 1rem;
+  letter-spacing: -0.01em;
+}
+
+.copy {
+  margin-top: 8px;
+  color: var(--ink-faint);
+  font-size: 0.8125rem;
+}
+
+.disclaimer {
+  color: var(--ink-muted);
+  font-size: 0.8125rem;
+  max-width: 62ch;
+  justify-self: end;
+}
+
+@media (max-width: 720px) {
+  .inner {
+    grid-template-columns: 1fr;
+  }
+
+  .disclaimer {
+    justify-self: start;
+  }
+}

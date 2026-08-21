@@ -1,0 +1,98 @@
+name: CI
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  quality:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - run: npm ci
+
+      - run: npm run typecheck
+      - run: npm run lint
+      - run: npm run format:check
+      - run: npm test
+      - run: npm run build
+        env:
+          NODE_OPTIONS: --max-old-space-size=6144
+      - run: npm run check:sim-hash
+
+  contracts:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: contracts/package-lock.json
+
+      - run: npm ci
+        working-directory: contracts
+
+      - run: npx hardhat compile
+        working-directory: contracts
+      - run: npm run typecheck
+        working-directory: contracts
+      - run: npx hardhat test
+        working-directory: contracts
+
+  server:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: apps/server/package-lock.json
+
+      - run: npm ci
+        working-directory: apps/server
+
+      - run: npm run typecheck
+        working-directory: apps/server
+      - run: npm run lint
+        working-directory: apps/server
+      - run: npm test
+        working-directory: apps/server
+
+  chain-e2e:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: contracts/package-lock.json
+
+      - run: npm ci
+        working-directory: contracts
+      - run: npm ci
+        working-directory: apps/server
+
+      - run: npx hardhat compile
+        working-directory: contracts
+      - run: nohup npx hardhat node > /tmp/hardhat-node.log 2>&1 &
+        working-directory: contracts
+      - run: sleep 5
+      - run: npx hardhat run scripts/deploy-local.ts --network localhost
+        working-directory: contracts
+
+      - run: npm run test:integration
+        working-directory: apps/server
+        env:
+          RPC_URL: http://127.0.0.1:8545

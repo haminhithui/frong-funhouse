@@ -1,0 +1,63 @@
+{
+  "name": "community-fan-site",
+  "private": true,
+  "version": "2.0.0",
+  "type": "module",
+  "description": "A small independent fan/community site: Vite + React + TypeScript with live official X embeds and a verified URL-only content model. FRONG demo content included.",
+  "license": "MIT",
+  "engines": {
+    "node": ">=20.19.0"
+  },
+  "scripts": {
+    "dev": "vite --host 127.0.0.1 --port 8080",
+    "build": "tsc -b && node --max-old-space-size=6144 node_modules/vite/bin/vite.js build",
+    "preview": "vite preview --host 127.0.0.1 --port 4173",
+    "lint": "eslint .",
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
+    "assets": "node scripts/gen-assets.mjs",
+    "typecheck": "tsc -b",
+    "test": "vitest run",
+    "check:sim-hash": "tsx scripts/check-sim-hash.mjs",
+    "chain:node": "npm --prefix contracts run node",
+    "chain:deploy": "npm --prefix contracts run deploy:local",
+    "contracts:test": "npm --prefix contracts run test",
+    "server:dev": "npm --prefix apps/server run dev",
+    "server:test": "npm --prefix apps/server run test",
+    "server:typecheck": "npm --prefix apps/server run typecheck",
+    "e2e:local": "node scripts/e2e-local.mjs"
+  },
+  "dependencies": {
+    "@privy-io/react-auth": "^3.37.3",
+    "@walletconnect/ethereum-provider": "^2.23.10",
+    "@walletconnect/modal": "^2.7.0",
+    "react": "^19.1.0",
+    "react-dom": "^19.1.0",
+    "viem": "^2.55.18"
+  },
+  "devDependencies": {
+    "@eslint/js": "^9.30.0",
+    "@stripe/stripe-js": "^9.13.0",
+    "@testing-library/dom": "^10.4.1",
+    "@testing-library/jest-dom": "^6.6.3",
+    "@testing-library/react": "^16.3.0",
+    "@testing-library/user-event": "^14.6.1",
+    "@types/node": "^26.2.0",
+    "@types/react": "^19.1.8",
+    "@types/react-dom": "^19.1.6",
+    "@vitejs/plugin-react": "^4.5.2",
+    "eslint": "^9.30.0",
+    "eslint-plugin-jsx-a11y": "^6.10.2",
+    "eslint-plugin-react-hooks": "5.2.0",
+    "eslint-plugin-react-refresh": "^0.4.20",
+    "globals": "^16.1.0",
+    "jsdom": "^26.1.0",
+    "prettier": "^3.6.2",
+    "sharp": "^0.35.3",
+    "tsx": "^4.23.12",
+    "typescript": "~5.8.3",
+    "typescript-eslint": "^8.35.0",
+    "vite": "^7.0.0",
+    "vitest": "^3.2.4"
+  }
+}

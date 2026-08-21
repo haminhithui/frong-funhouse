@@ -1,0 +1,27 @@
+{
+  "name": "frong-catch-contracts",
+  "private": true,
+  "version": "0.1.0",
+  "description": "FRONG Catch on-chain contracts: mock tFRONG (testnet), FRONG entry payment, ERC-721 trophy (team minter only).",
+  "scripts": {
+    "compile": "hardhat compile",
+    "test": "hardhat test",
+    "typecheck": "tsc --noEmit",
+    "node": "hardhat node",
+    "deploy:local": "hardhat run scripts/deploy-local.ts --network localhost",
+    "deploy:testnet": "hardhat run scripts/deploy-testnet.ts --network frong-testnet"
+  },
+  "devDependencies": {
+    "@nomicfoundation/hardhat-viem": "^2.0.6",
+    "@nomicfoundation/hardhat-verify": "^2.0.13",
+    "dotenv": "^16.6.1",
+    "@openzeppelin/contracts": "^5.3.0",
+    "@types/mocha": "^10.0.10",
+    "@types/node": "^26.0.0",
+    "hardhat": "^2.26.3",
+    "mocha": "^11.1.0",
+    "ts-node": "^10.9.2",
+    "typescript": "~5.8.3",
+    "viem": "^2.27.0"
+  }
+}

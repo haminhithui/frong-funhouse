@@ -1,0 +1,92 @@
+.card {
+  width: 100%;
+  padding: 18px 20px;
+  background: var(--bg-raised);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-md);
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  overflow: hidden;
+  transition:
+    border-color var(--speed-fast) var(--ease),
+    box-shadow var(--speed-fast) var(--ease),
+    transform var(--speed-fast) var(--ease);
+}
+
+.card:hover {
+  border-color: var(--line-strong);
+  box-shadow: var(--shadow-soft);
+  transform: translateY(-2px);
+}
+
+/* Flush variant: the embed sits edge-to-edge inside the card frame. */
+.cardFlush {
+  padding: 0;
+}
+
+/* Bare variant: no shell of its own — the X embed is the single visible frame. */
+.cardBare {
+  background: none;
+  border: none;
+  border-radius: 0;
+}
+
+.cardBare:hover {
+  border-color: transparent;
+  box-shadow: none;
+}
+
+.embed {
+  display: block;
+  width: 100%;
+  max-width: 550px;
+  margin-inline: auto;
+  min-height: 200px;
+}
+
+/* The official embed (and its blockquote fallback) must stay within the card. */
+.embed :global(.twitter-tweet),
+.embed iframe {
+  max-width: 100% !important;
+}
+
+/* Cap anything the widget injects so it can never outgrow the wrapper. */
+.embed > * {
+  max-width: 100% !important;
+}
+
+.embed :global(.twitter-tweet) {
+  margin: 0 auto !important;
+}
+
+.skeleton {
+  min-height: 200px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--ink-faint);
+  font-size: 0.8125rem;
+  border: 1px dashed var(--line);
+  border-radius: var(--radius-sm);
+  animation: pulse 1.6s ease-in-out infinite;
+}
+
+@keyframes pulse {
+  0%,
+  100% {
+    opacity: 0.45;
+  }
+
+  50% {
+    opacity: 1;
+  }
+}
+
+.fallbackLink {
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: var(--accent-bright);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}

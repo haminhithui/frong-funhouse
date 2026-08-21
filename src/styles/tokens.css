@@ -1,0 +1,44 @@
+:root {
+  color-scheme: dark;
+
+  /* Palette — dark editorial, warm white ink, one restrained frog green */
+  --bg: #0b0d0c;
+  --bg-raised: #111413;
+  --bg-soft: #161a18;
+  --ink: #ece7dc;
+  --ink-muted: #a39c8f;
+  --ink-faint: #8a8577; /* >=4.5:1 on both --bg and --bg-raised (WCAG AA) */
+  --accent: #9cdb62;
+  --accent-bright: #b9ef83;
+  --accent-ink: #101a08;
+  --accent-soft: rgba(156, 219, 98, 0.09);
+  --accent-line: rgba(185, 239, 131, 0.35);
+
+  /* Moss tints sampled from the FRONG PNG palette */
+  --moss-1: #1d2a22;
+  --moss-2: #142018;
+  --ring: rgba(185, 239, 131, 0.28);
+
+  /* Lines and surfaces — subtle, never loud */
+  --line: rgba(236, 231, 220, 0.1);
+  --line-strong: rgba(236, 231, 220, 0.18);
+  --shadow-soft: 0 1px 0 rgba(0, 0, 0, 0.35), 0 12px 32px -16px rgba(0, 0, 0, 0.55);
+
+  /* Type */
+  --font-sans:
+    'Inter', 'Inter Variable', system-ui, 'Segoe UI', 'Helvetica Neue', Arial, sans-serif;
+  --font-mono:
+    ui-monospace, 'Cascadia Mono', 'SFMono-Regular', Consolas, 'Liberation Mono', monospace;
+
+  /* Rhythm */
+  --gutter: clamp(20px, 4vw, 40px);
+  --container: 1200px;
+  --section-y: clamp(56px, 8vh, 96px);
+  --radius-sm: 8px;
+  --radius-md: 14px;
+
+  /* Motion */
+  --ease: cubic-bezier(0.22, 1, 0.36, 1);
+  --speed-fast: 140ms;
+  --speed-base: 220ms;
+}

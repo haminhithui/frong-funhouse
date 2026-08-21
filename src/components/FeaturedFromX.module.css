@@ -1,0 +1,6 @@
+.wrap {
+  margin-top: 28px;
+  margin-inline: auto;
+  /* 552 = 550 official embed width + 2x1px card border, so the iframe sits flush. */
+  max-width: 552px;
+}

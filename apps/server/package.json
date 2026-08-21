@@ -1,0 +1,31 @@
+{
+  "name": "frong-catch-server",
+  "private": true,
+  "version": "0.1.0",
+  "description": "FRONG Catch game server: wallet verify, payment validation, seed issuance, replay verification, rarity assignment, attestation log, mint queue. Authoritative; never trusts the client.",
+  "scripts": {
+    "dev": "tsx watch --env-file-if-exists=.env src/index.ts",
+    "start": "tsx --env-file-if-exists=.env src/index.ts",
+    "typecheck": "tsc --noEmit",
+    "lint": "eslint .",
+    "test": "vitest run",
+    "test:integration": "vitest run test/integration.test.ts"
+  },
+  "dependencies": {
+    "@aws-sdk/client-kms": "^3.1114.0",
+    "@privy-io/server-auth": "^1.32.5",
+    "pinata": "^2.5.6",
+    "viem": "^2.55.18"
+  },
+  "devDependencies": {
+    "@eslint/js": "^9.30.0",
+    "@types/node": "^26.0.0",
+    "eslint": "^9.30.0",
+    "globals": "^16.1.0",
+    "jose": "^6.0.0",
+    "tsx": "^4.20.0",
+    "typescript": "~5.8.3",
+    "typescript-eslint": "^8.35.0",
+    "vitest": "^3.2.4"
+  }
+}

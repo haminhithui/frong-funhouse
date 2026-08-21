@@ -1,0 +1,15 @@
+node_modules
+dist
+coverage
+package-lock.json
+public/assets
+.env.example
+**/.env.example
+.hermes
+contracts/artifacts
+contracts/cache
+contracts/deployments
+apps/server/data
+apps/server/coverage
+apps/server/package-lock.json
+contracts/package-lock.json

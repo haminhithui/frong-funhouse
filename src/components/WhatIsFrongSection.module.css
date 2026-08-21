@@ -1,0 +1,44 @@
+.chainNote {
+  margin-top: 32px;
+  padding: 24px 26px;
+}
+
+.chainTitle {
+  font-size: 0.8125rem;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+}
+
+.chainText {
+  margin-top: 12px;
+  max-width: 68ch;
+  color: var(--ink-muted);
+  font-size: 0.9375rem;
+}
+
+.contractRow {
+  margin-top: 16px;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 14px;
+}
+
+.contract {
+  font-family: var(--font-mono);
+  font-size: 0.875rem;
+  color: var(--ink);
+  padding: 10px 14px;
+  background: var(--bg);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-sm);
+  overflow-wrap: anywhere;
+}
+
+.fine {
+  margin-top: 12px;
+  font-size: 0.8125rem;
+  color: var(--ink-faint);
+  max-width: 72ch;
+}
