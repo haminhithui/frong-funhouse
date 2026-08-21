@@ -25,11 +25,13 @@
   padding: 0;
 }
 
-/* Bare variant: no shell of its own — the X embed is the single visible frame. */
+/* Bare variant: no shell of its own — the X embed is the single visible
+   frame. The wrapper still rounds and clips so the embed's corners stay
+   consistent on every viewport, even when the iframe renders square. */
 .cardBare {
   background: none;
   border: none;
-  border-radius: 0;
+  border-radius: var(--radius-md);
 }
 
 .cardBare:hover {
@@ -89,4 +91,33 @@
   color: var(--accent-bright);
   text-decoration: underline;
   text-underline-offset: 3px;
+}
+
+/* Fallback row: official link plus an explicit retry action. */
+.fallback {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 12px;
+}
+
+.retryButton {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: var(--touch-target);
+  padding: 8px 16px;
+  border: 1px solid var(--line-strong);
+  border-radius: var(--radius-sm);
+  color: var(--ink);
+  font-size: 0.875rem;
+  font-weight: 600;
+  transition:
+    border-color var(--speed-fast) var(--ease),
+    color var(--speed-fast) var(--ease);
+}
+
+.retryButton:hover {
+  border-color: var(--accent);
+  color: var(--accent-bright);
 }

@@ -1,13 +1,18 @@
-import { useEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import { fetchOEmbed, loadXWidgetScript } from '../lib/xPosts'
 import type { XPostRef } from '../types/content'
 import styles from './XEmbedCard.module.css'
 
 interface XEmbedProps {
   html: string
+  /** Called when the official widget cannot upgrade the blockquote (script
+      failed or timed out) — the card adds a visible "View on X" link. */
+  onDegraded: () => void
+  /** Bumped by the retry action to re-run the widget load. */
+  attempt: number
 }
 
-function XEmbed({ html }: XEmbedProps) {
+function XEmbed({ html, onDegraded, attempt }: XEmbedProps) {
   const ref = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
@@ -15,6 +20,7 @@ function XEmbed({ html }: XEmbedProps) {
     if (!el || !html) return
     let cancelled = false
     let resizeTimer: number | undefined
+    let lastWidth = el.clientWidth
 
     const render = () => {
       if (cancelled) return
@@ -23,10 +29,17 @@ function XEmbed({ html }: XEmbedProps) {
       blockquote?.setAttribute('data-theme', 'dark')
       loadXWidgetScript()
         .then(() => {
-          if (!cancelled) window.twttr?.widgets?.load(el)
+          if (cancelled) return
+          if (window.twttr?.widgets) {
+            window.twttr.widgets.load(el)
+          } else {
+            // The script "loaded" without exposing the widgets API (blocked
+            // or neutered) — treat it as degraded, same as a failed load.
+            onDegraded()
+          }
         })
         .catch(() => {
-          // The oEmbed blockquote stays as fallback content if the widget fails.
+          if (!cancelled) onDegraded()
         })
     }
 
@@ -35,7 +48,12 @@ function XEmbed({ html }: XEmbedProps) {
     // The official widget re-measures on window resize and can mis-size or
     // mis-theme its iframe. Re-render from the blockquote (debounced) so the
     // embed always lands at the capped wrapper width with the dark theme.
+    // Only re-render when the wrapper WIDTH actually changed: height-only
+    // resizes (mobile browser chrome) must not wipe live iframes.
     const onResize = () => {
+      const width = el.clientWidth
+      if (width > 0 && lastWidth > 0 && Math.abs(width - lastWidth) <= 1) return
+      lastWidth = width
       window.clearTimeout(resizeTimer)
       resizeTimer = window.setTimeout(render, 250)
     }
@@ -47,7 +65,7 @@ function XEmbed({ html }: XEmbedProps) {
       window.removeEventListener('resize', onResize)
       el.innerHTML = ''
     }
-  }, [html])
+  }, [html, onDegraded, attempt])
 
   return <div ref={ref} className={styles.embed} />
 }
@@ -63,11 +81,56 @@ interface XEmbedCardProps {
 export function XEmbedCard({ post, flush = false, bare = false }: XEmbedCardProps) {
   const [embedHtml, setEmbedHtml] = useState<string | null>(null)
   const [failed, setFailed] = useState(false)
+  const [degraded, setDegraded] = useState(false)
+  const [started, setStarted] = useState(false)
+  /** oEmbed fetch attempts — bumped by "Try again" after a failed fetch. */
+  const [attempt, setAttempt] = useState(0)
+  /** Widget load attempts — bumped by "Retry embed" after a degraded embed. */
+  const [widgetAttempt, setWidgetAttempt] = useState(0)
+  const cardRef = useRef<HTMLElement | null>(null)
+
+  const handleDegraded = useCallback(() => setDegraded(true), [])
+
+  const retryFetch = useCallback(() => {
+    setFailed(false)
+    setEmbedHtml(null)
+    setAttempt((n) => n + 1)
+  }, [])
+
+  const retryWidget = useCallback(() => {
+    setDegraded(false)
+    setWidgetAttempt((n) => n + 1)
+  }, [])
+
+  // Lazy: only start loading when the card nears the viewport, so below-fold
+  // sections never compete with the initial page load. Without
+  // IntersectionObserver (tests, very old browsers) load immediately.
+  useEffect(() => {
+    const el = cardRef.current
+    if (!el) return
+    if (typeof IntersectionObserver === 'undefined') {
+      setStarted(true)
+      return
+    }
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries.some((entry) => entry.isIntersecting)) {
+          setStarted(true)
+          observer.disconnect()
+        }
+      },
+      { rootMargin: '600px 0px' },
+    )
+    observer.observe(el)
+    return () => observer.disconnect()
+  }, [])
 
   useEffect(() => {
+    if (!started) return
     let cancelled = false
     setEmbedHtml(null)
     setFailed(false)
+    setDegraded(false)
 
     void (async () => {
       const html = await fetchOEmbed(post.url)
@@ -79,25 +142,47 @@ export function XEmbedCard({ post, flush = false, bare = false }: XEmbedCardProp
     return () => {
       cancelled = true
     }
-  }, [post.url])
+  }, [post.url, started, attempt])
 
   const classes = [styles.card, flush || bare ? styles.cardFlush : '', bare ? styles.cardBare : '']
     .filter(Boolean)
     .join(' ')
 
   return (
-    <article className={classes}>
+    <article ref={cardRef} className={classes} aria-busy={!failed && embedHtml === null}>
       {failed ? (
-        <a
-          className={styles.fallbackLink}
-          href={post.url}
-          target="_blank"
-          rel="noreferrer noopener"
-        >
-          View this post on X <span aria-hidden="true">↗</span>
-        </a>
+        <div className={styles.fallback}>
+          <a
+            className={styles.fallbackLink}
+            href={post.url}
+            target="_blank"
+            rel="noreferrer noopener"
+          >
+            View this post on X <span aria-hidden="true">↗</span>
+          </a>
+          <button type="button" className={styles.retryButton} onClick={retryFetch}>
+            Try again
+          </button>
+        </div>
       ) : embedHtml ? (
-        <XEmbed html={embedHtml} />
+        <>
+          <XEmbed html={embedHtml} onDegraded={handleDegraded} attempt={widgetAttempt} />
+          {degraded && (
+            <div className={styles.fallback}>
+              <a
+                className={styles.fallbackLink}
+                href={post.url}
+                target="_blank"
+                rel="noreferrer noopener"
+              >
+                View on X <span aria-hidden="true">↗</span>
+              </a>
+              <button type="button" className={styles.retryButton} onClick={retryWidget}>
+                Retry embed
+              </button>
+            </div>
+          )}
+        </>
       ) : (
         <div className={styles.skeleton}>Loading post…</div>
       )}

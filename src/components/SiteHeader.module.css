@@ -44,7 +44,7 @@
 
 .navLink {
   position: relative;
-  padding: 6px 2px;
+  padding: 10px 6px;
   font-size: 0.9rem;
   color: var(--ink-muted);
   transition: color var(--speed-fast) var(--ease);
@@ -65,7 +65,8 @@
   transition: right var(--speed-base) var(--ease);
 }
 
-.navLink:hover::after {
+.navLink:hover::after,
+.navLink:focus-visible::after {
   right: 0;
 }
 
@@ -89,6 +90,7 @@
   display: inline-flex;
   align-items: center;
   gap: 5px;
+  padding: 8px 0;
   font-size: 0.85rem;
   font-weight: 600;
   color: var(--ink-muted);
@@ -112,7 +114,17 @@
   }
 
   .navLink {
+    padding: 13px 6px;
     font-size: 0.85rem;
+  }
+
+  .externalLink {
+    /* 12px top+bottom keeps the hit area at the 44px touch target. */
+    padding: 12px 0;
+  }
+
+  .brand {
+    padding: 5px 0;
   }
 
   .external {

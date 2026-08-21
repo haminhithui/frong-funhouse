@@ -22,11 +22,12 @@ describe('embed wrapper sizing (regression guards)', () => {
     expect(embedCss).toContain('padding: 0;')
   })
 
-  it('keeps the wall cards shell-less (no border, background, or radius)', () => {
-    expect(embedCss).toContain('.cardBare {')
-    expect(embedCss).toContain('background: none;')
-    expect(embedCss).toContain('border: none;')
-    expect(embedCss).toContain('border-radius: 0;')
+  it('keeps the wall cards shell-less but rounds the frame for the embed', () => {
+    // Pin the exact bare-card block: no shell, but the wrapper still rounds
+    // and (via .card overflow: hidden) clips the embed's corners.
+    expect(embedCss).toContain(
+      '.cardBare {\n  background: none;\n  border: none;\n  border-radius: var(--radius-md);\n}',
+    )
   })
 
   it('shrinks the featured wrapper to the embed width so no blank space returns', () => {

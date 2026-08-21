@@ -14,6 +14,18 @@
   --accent-soft: rgba(156, 219, 98, 0.09);
   --accent-line: rgba(185, 239, 131, 0.35);
 
+  /* Semantic state colors — one map for success/warning/danger/info */
+  --success: #b9ef83;
+  --warning: #e8c56d;
+  --warning-soft: rgba(232, 197, 109, 0.1);
+  --warning-line: rgba(232, 197, 109, 0.38);
+  --danger: #f2a08c;
+  --danger-soft: rgba(242, 160, 140, 0.1);
+  --danger-line: rgba(242, 160, 140, 0.38);
+  --info: #9cc7e8;
+  --info-soft: rgba(156, 199, 232, 0.1);
+  --info-line: rgba(156, 199, 232, 0.38);
+
   /* Moss tints sampled from the FRONG PNG palette */
   --moss-1: #1d2a22;
   --moss-2: #142018;
@@ -36,9 +48,25 @@
   --section-y: clamp(56px, 8vh, 96px);
   --radius-sm: 8px;
   --radius-md: 14px;
+  --radius-lg: 18px;
+  --radius-pill: 999px;
+
+  /* Focus */
+  --focus-ring: var(--accent-bright);
+  --focus-ring-width: 2px;
+
+  /* Touch */
+  --touch-target: 44px;
 
   /* Motion */
   --ease: cubic-bezier(0.22, 1, 0.36, 1);
+  --ease-spring: cubic-bezier(0.34, 1.56, 0.64, 1);
   --speed-fast: 140ms;
   --speed-base: 220ms;
+  --speed-slow: 340ms;
+
+  /* Elevation */
+  --z-header: 50;
+  --z-overlay: 60;
+  --z-skip: 100;
 }
