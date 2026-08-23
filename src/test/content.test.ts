@@ -134,13 +134,15 @@ describe('demo site config (provenance guard)', () => {
   })
 
   it('ships the arcade section with practice and paid mode copy', () => {
-    expect(DEMO_SITE_CONFIG.play?.title).toBe('FRONG Catch')
+    expect(DEMO_SITE_CONFIG.play?.title).toBe('Pond Arcade')
     expect(DEMO_SITE_CONFIG.play?.eyebrow).toBe('Pond Arcade')
-    expect(DEMO_SITE_CONFIG.play?.note).toMatch(/no wallet, no prizes/i)
+    expect(DEMO_SITE_CONFIG.play?.note).toMatch(/run locally with no wallet/i)
     expect(DEMO_SITE_CONFIG.play?.practiceCta).toBe('Play free practice')
     expect(DEMO_SITE_CONFIG.play?.paidCta).toBe('Play for a trophy')
     expect(DEMO_SITE_CONFIG.play?.paidBlurb).toMatch(/FRONG entry fee/i)
     expect(DEMO_SITE_CONFIG.play?.note).toMatch(/non-refundable FRONG entry fee/i)
+    expect(DEMO_SITE_CONFIG.play?.games).toHaveLength(2)
+    expect(DEMO_SITE_CONFIG.play?.games?.[1].id).toBe('pond-guardian')
   })
 
   it('keeps the lowercase-normalized contract address for identification', () => {

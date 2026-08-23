@@ -165,15 +165,16 @@ describe('App', () => {
     const play = document.getElementById('play')
     expect(play).not.toBeNull()
 
-    // exactly one game heading: the section title
-    const heading = within(play!).getByRole('heading', { name: 'FRONG Catch' })
+    // exactly one arcade heading: the section title
+    const heading = within(play!).getByRole('heading', { name: 'Pond Arcade' })
     expect(heading.tagName).toBe('H2')
 
-    // both modes are offered from the menu
+    // FRONG modes and the second game are offered from the library
     expect(within(play!).getByRole('button', { name: 'Play free practice' })).toBeInTheDocument()
     expect(within(play!).getByRole('button', { name: 'Play for a trophy' })).toBeInTheDocument()
+    expect(within(play!).getByRole('button', { name: 'Play Pond Guardian' })).toBeInTheDocument()
     expect(
-      within(play!).getByText(/Practice mode is free — no wallet, no prizes/),
+      within(play!).getByText(/Pond Guardian and FRONG Catch practice run locally/),
     ).toBeInTheDocument()
 
     // the nav points at the in-page section

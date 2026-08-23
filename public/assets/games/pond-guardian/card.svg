@@ -1,0 +1,40 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 360" role="img" aria-labelledby="title desc">
+  <title id="title">Pond Guardian arcade card</title>
+  <desc id="desc">An original glowing frog on a lily pad watched by a silhouetted pond guardian.</desc>
+  <defs>
+    <linearGradient id="water" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#102d1b"/>
+      <stop offset="1" stop-color="#06100a"/>
+    </linearGradient>
+    <radialGradient id="glow" cx="70%" cy="48%" r="35%">
+      <stop offset="0" stop-color="#b9ef83" stop-opacity=".35"/>
+      <stop offset="1" stop-color="#b9ef83" stop-opacity="0"/>
+    </radialGradient>
+  </defs>
+  <rect width="640" height="360" fill="url(#water)"/>
+  <rect width="640" height="360" fill="url(#glow)"/>
+  <g fill="#285f2c" stroke="#122315" stroke-width="5">
+    <ellipse cx="455" cy="245" rx="112" ry="30"/>
+    <path d="M455 245 520 224 492 255Z" fill="#1c4723"/>
+  </g>
+  <g stroke="#102315" stroke-width="6" stroke-linejoin="round">
+    <path fill="#83df3f" d="M413 221c-8-24 8-48 32-48 10-21 43-20 52 1 23 1 36 27 23 47-3 17-22 34-52 34s-50-15-55-34Z"/>
+    <circle fill="#c4f879" cx="441" cy="179" r="13"/>
+    <circle fill="#c4f879" cx="485" cy="179" r="13"/>
+    <circle fill="#102315" stroke="none" cx="441" cy="181" r="4"/>
+    <circle fill="#102315" stroke="none" cx="485" cy="181" r="4"/>
+    <path fill="none" d="M438 215c16 14 34 14 50 0"/>
+  </g>
+  <g fill="#263d64" stroke="#161a14" stroke-width="9" stroke-linejoin="round">
+    <path d="M80 360 102 206c8-39 35-65 70-65s61 26 69 65l25 154Z"/>
+    <path d="m173 213 50-145 19 7-46 151Z" fill="#5e4531"/>
+    <path d="m213 78 14-32 28 12-15 32Z" fill="#9c9a87"/>
+  </g>
+  <g fill="#d969a6" stroke="#4b193f" stroke-width="3">
+    <path d="m125 110 12-27 13 27Z"/>
+    <path d="m146 111 20-22 2 28Z"/>
+  </g>
+  <g fill="#b9ef83">
+    <circle cx="80" cy="65" r="3"/><circle cx="338" cy="72" r="2"/><circle cx="570" cy="92" r="3"/>
+  </g>
+</svg>
