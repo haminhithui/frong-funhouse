@@ -70,6 +70,9 @@ export function createPrivyVerifier(config: ServerConfig): PrivyVerifier | null 
       } catch {
         return { ok: false, reason: 'identity token invalid' }
       }
+      if (user.id !== claims.userId) {
+        return { ok: false, reason: 'access and identity tokens belong to different users' }
+      }
       const linked = (user.linkedAccounts ?? [])
         .filter((account) => account.type === 'wallet')
         .map((account) => {

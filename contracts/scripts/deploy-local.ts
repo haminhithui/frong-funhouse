@@ -22,7 +22,7 @@ async function main() {
     price,
     treasury,
     gasReserve,
-    false,
+    true,
   ])
   const trophy = await hre.viem.deployContract('FrongTrophy', [false])
   const trophyC = await hre.viem.getContractAt('FrongTrophy', trophy.address)
@@ -38,7 +38,7 @@ async function main() {
     price: price.toString(),
     treasury,
     gasReserve,
-    strictReceived: false,
+    strictReceived: true,
     deployer: deployer.account.address,
     minter: minter.account.address,
     deployedAt: new Date().toISOString(),

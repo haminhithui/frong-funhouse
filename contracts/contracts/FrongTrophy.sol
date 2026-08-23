@@ -24,6 +24,9 @@ contract FrongTrophy is ERC721, Pausable, ReentrancyGuard {
     }
 
     event TrophyMinted(address indexed to, uint256 indexed tokenId, Attestation attestation, string tokenURI_);
+    event MinterUpdated(address indexed account, bool enabled);
+    event RateCapUpdated(uint256 oldCap, uint256 newCap);
+    event PauseStateChanged(bool paused);
     event AdminProposed(address indexed proposed, uint256 proposedAt);
     event AdminAccepted(address indexed previous, address indexed accepted, uint256 acceptedAt);
 
@@ -65,10 +68,13 @@ contract FrongTrophy is ERC721, Pausable, ReentrancyGuard {
 
     function setMinter(address account, bool enabled) external onlyAdmin {
         minters[account] = enabled;
+        emit MinterUpdated(account, enabled);
     }
 
     function setRateCap(uint256 cap) external onlyAdmin {
+        uint256 oldCap = rateCap;
         rateCap = cap;
+        emit RateCapUpdated(oldCap, cap);
     }
 
     function proposeAdmin(address newAdmin) external onlyAdmin {
@@ -91,10 +97,12 @@ contract FrongTrophy is ERC721, Pausable, ReentrancyGuard {
 
     function pause() external onlyAdmin {
         _pause();
+        emit PauseStateChanged(true);
     }
 
     function unpause() external onlyAdmin {
         _unpause();
+        emit PauseStateChanged(false);
     }
 
     function mint(

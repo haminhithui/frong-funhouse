@@ -1,9 +1,21 @@
-import { randomBytes } from 'node:crypto'
+import { createHash, randomBytes } from 'node:crypto'
 
-interface AuthToken {
+export interface AuthToken {
   address: string
   expiresAt: number
 }
+
+/**
+ * Durable auth storage is injected by the server. The in-memory adapter is
+ * retained for isolated unit tests and callers that explicitly opt out.
+ */
+export interface AuthTokenPersistence {
+  putAuthToken(tokenHash: string, record: AuthToken): void
+  getAuthToken(tokenHash: string): AuthToken | undefined
+  pruneAuthTokens(now: number): void
+}
+
+export const AUTH_TOKEN_PERSISTENCE_SCOPE = 'durable-adapter' as const
 
 const tokens = new Map<string, AuthToken>()
 
@@ -18,19 +30,41 @@ function prune(): void {
 export function issueAuthToken(
   address: string,
   ttlMs: number,
+  persistence?: AuthTokenPersistence,
 ): { token: string; expiresAt: number } {
-  prune()
+  if (persistence) persistence.pruneAuthTokens(Date.now())
+  else prune()
   const token = randomBytes(32).toString('hex')
-  tokens.set(token, { address: address.toLowerCase(), expiresAt: Date.now() + ttlMs })
-  return { token, expiresAt: Date.now() + ttlMs }
+  const expiresAt = Date.now() + ttlMs
+  const record = { address: address.toLowerCase(), expiresAt }
+  if (persistence) {
+    // Persist only a digest. A data-directory read must never reveal a live
+    // bearer token that can be replayed against the API.
+    persistence.putAuthToken(hashToken(token), record)
+  } else {
+    tokens.set(token, record)
+  }
+  return { token, expiresAt }
 }
 
 /** Resolves the address behind a Bearer token, or null. */
-export function resolveAuth(header: string | undefined): string | null {
-  prune()
+export function resolveAuth(
+  header: string | undefined,
+  persistence?: AuthTokenPersistence,
+): string | null {
+  if (persistence) persistence.pruneAuthTokens(Date.now())
+  else prune()
   if (!header || !header.startsWith('Bearer ')) return null
   const token = header.slice('Bearer '.length).trim()
-  const auth = tokens.get(token)
+  if (!/^[0-9a-f]{64}$/.test(token) && !/^[0-9a-f]{64}$/.test(token.toLowerCase())) {
+    return null
+  }
+  const auth = persistence ? persistence.getAuthToken(hashToken(token)) : tokens.get(token)
   if (!auth) return null
+  if (auth.expiresAt <= Date.now()) return null
   return auth.address
+}
+
+function hashToken(token: string): string {
+  return createHash('sha256').update(token).digest('hex')
 }

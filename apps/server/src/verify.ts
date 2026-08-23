@@ -32,6 +32,19 @@ const SOLVER_MATCH_RATIO = 0.98
 /** Minimum comparable ticks before the solver check applies (short dev/test
  * runs below this are exempt). */
 const SOLVER_MIN_SAMPLE = 100
+/**
+ * Small deterministic jitter is still a solver if it stays close to the
+ * solver target for nearly every sample. This wider band catches the
+ * documented jitter exploit without treating an occasional good pointer
+ * position as automation.
+ */
+const SOLVER_PROXIMITY_TOLERANCE = 8
+const SOLVER_PROXIMITY_RATIO = 0.995
+/** A real pointer may move every so often; solver output changes almost every
+ * tick. Require the high-proximity signal and a high update cadence together.
+ */
+const SOLVER_MIN_UPDATE_RATIO = 0.75
+const POINTER_UPDATE_EPSILON = 0.25
 
 /** A frame is exactly { targetX, axis } - no extra fields survive. */
 function isPlainFrame(frame: unknown): frame is InputFrame {
@@ -46,7 +59,7 @@ function isPlainFrame(frame: unknown): frame is InputFrame {
  * client's claimed numbers are never trusted.
  *
  * Rejection order (stable reasons):
- *   length -> frame shape -> axis/velocity -> hash -> solver signature ->
+ *   length -> frame shape -> axis/velocity -> hash -> solver signatures ->
  *   replay -> finish line -> deck invariants.
  */
 export function verifyRun(
@@ -94,24 +107,62 @@ export function verifyRun(
     return { ok: false, reason: 'input axis flip rate exceeds human limits' }
   }
 
-  // Solver signature: replay the greedy solution for the seed and compare
-  // pointer targets. Exact tracking on nearly every tick is automation.
+  // Solver signatures: replay the greedy solution for the seed and compare
+  // pointer targets. Exact tracking on nearly every tick is automation. A
+  // solver with a small deterministic/random jitter is also high-confidence
+  // automation when it remains close to the solver while updating the pointer
+  // target almost every tick. The two-signal requirement deliberately leaves
+  // idle, keyboard-only, and ordinary pointer play alone.
   const solverState = createGame(seed, {
     countdownTicks: config.countdownTicks,
     durationTicks: config.durationTicks,
   })
   let comparable = 0
   let matched = 0
+  let proximityMatched = 0
+  let pointerSamples = 0
+  let pointerUpdates = 0
+  let previousPointerTarget: number | null = null
   for (const frame of inputLog) {
+    const wasPlaying = solverState.phase === 'playing'
     const solver = autoInput(solverState)
     stepGame(solverState, solver)
+
+    if (!wasPlaying) {
+      previousPointerTarget = null
+      continue
+    }
+    if (frame.targetX !== null) {
+      pointerSamples += 1
+      if (
+        previousPointerTarget !== null &&
+        Math.abs(frame.targetX - previousPointerTarget) > POINTER_UPDATE_EPSILON
+      ) {
+        pointerUpdates += 1
+      }
+      previousPointerTarget = frame.targetX
+    } else {
+      previousPointerTarget = null
+    }
+
     if (frame.targetX !== null && solver.targetX !== null) {
       comparable += 1
       if (Math.abs(frame.targetX - solver.targetX) <= 0.5) matched += 1
+      if (Math.abs(frame.targetX - solver.targetX) <= SOLVER_PROXIMITY_TOLERANCE) {
+        proximityMatched += 1
+      }
     }
   }
   if (comparable >= SOLVER_MIN_SAMPLE && matched / comparable >= SOLVER_MATCH_RATIO) {
     return { ok: false, reason: 'input matches automated solver signature' }
+  }
+  if (
+    comparable >= SOLVER_MIN_SAMPLE &&
+    pointerSamples >= SOLVER_MIN_SAMPLE &&
+    proximityMatched / comparable >= SOLVER_PROXIMITY_RATIO &&
+    pointerUpdates / pointerSamples >= SOLVER_MIN_UPDATE_RATIO
+  ) {
+    return { ok: false, reason: 'input matches automated solver with low-jitter pointer cadence' }
   }
 
   const state = replayGame(seed, inputLog, {

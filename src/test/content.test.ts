@@ -77,8 +77,20 @@ describe('content model', () => {
   })
 
   it('orders navigation to match page section order', () => {
-    expect(NAV_ITEMS.map((item) => item.href)).toEqual(['#about', '#art', '#play', '#community'])
-    expect(NAV_ITEMS.map((item) => item.label)).toEqual(['About', 'Art', 'Play', 'Community'])
+    expect(NAV_ITEMS.map((item) => item.href)).toEqual([
+      '#about',
+      '#art',
+      '#play',
+      '#/analytics',
+      '#community',
+    ])
+    expect(NAV_ITEMS.map((item) => item.label)).toEqual([
+      'About',
+      'Art',
+      'Play',
+      'Analytics',
+      'Community',
+    ])
   })
 
   it('ships exactly the two verified external discovery URLs', () => {

@@ -1,7 +1,9 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
+import arcade from './arcade.module.css'
 import { CanvasStage } from './CanvasStage'
 import type { HudSnapshot, RunResult } from './CanvasStage'
-import { FLY_COLORS } from './render'
+import { FlyGlyph } from './FlyGlyph'
+import { FLY_LABELS, FLY_NOTES } from './flyCopy'
 import {
   DEFAULT_COUNTDOWN_TICKS,
   DEFAULT_DURATION_TICKS,
@@ -10,28 +12,11 @@ import {
   TIERS,
   tierForScore,
 } from './sim/constants'
-import type { FlyTypeId } from './sim/types'
+import { TIER_FLAVOR } from './tierCopy'
 import { buildShareUrl, loadBestScore, randomSeed, saveBestScore } from './util'
 import { usePrefersReducedMotion } from './usePrefersReducedMotion'
-import styles from './GameApp.module.css'
 
 type Screen = 'attract' | 'run' | 'results'
-
-const FLY_LABELS: Record<FlyTypeId, string> = {
-  gnat: 'Gnat',
-  midge: 'Midge',
-  drifter: 'Drifter',
-  firefly: 'Golden Firefly',
-  queen: 'Queen Fly',
-}
-
-const FLY_NOTES: Record<FlyTypeId, string> = {
-  gnat: 'Straight fall',
-  midge: 'Fast, small',
-  drifter: 'Drifts wide',
-  firefly: 'Fast, glowing',
-  queen: 'Erratic jackpot',
-}
 
 interface GameAppProps {
   /** Overridable for tests; defaults match the design doc (60s run, 3s countdown). */
@@ -39,68 +24,6 @@ interface GameAppProps {
   countdownTicks?: number
   /** id of the section heading that labels the attract panel when embedded in a page. */
   labelledBy?: string
-}
-
-/** Small inline glyph per fly type — matches the canvas silhouettes (shape, never color alone). */
-function FlyGlyph({ type }: { type: FlyTypeId }) {
-  const color = FLY_COLORS[type]
-  switch (type) {
-    case 'gnat':
-      return (
-        <svg viewBox="0 0 28 28" width="26" height="26" aria-hidden="true">
-          <ellipse
-            cx="8.5"
-            cy="11"
-            rx="4.5"
-            ry="2.6"
-            transform="rotate(-28 8.5 11)"
-            fill={color}
-            opacity="0.55"
-          />
-          <ellipse
-            cx="19.5"
-            cy="11"
-            rx="4.5"
-            ry="2.6"
-            transform="rotate(28 19.5 11)"
-            fill={color}
-            opacity="0.55"
-          />
-          <circle cx="14" cy="15.5" r="5.4" fill={color} />
-        </svg>
-      )
-    case 'midge':
-      return (
-        <svg viewBox="0 0 28 28" width="26" height="26" aria-hidden="true">
-          <ellipse cx="14" cy="14" rx="3.6" ry="8" fill={color} />
-        </svg>
-      )
-    case 'drifter':
-      return (
-        <svg viewBox="0 0 28 28" width="26" height="26" aria-hidden="true">
-          <circle cx="14" cy="14" r="7" fill={color} />
-          <rect x="7" y="12.6" width="14" height="2.8" rx="1.4" fill="#0b0d0c" />
-        </svg>
-      )
-    case 'firefly':
-      return (
-        <svg viewBox="0 0 28 28" width="26" height="26" aria-hidden="true">
-          <circle cx="14" cy="14" r="7.4" fill={color} opacity="0.35" />
-          <circle cx="14" cy="14" r="5" fill={color} />
-          <circle cx="14" cy="14" r="2.2" fill="#101a08" />
-        </svg>
-      )
-    case 'queen':
-      return (
-        <svg viewBox="0 0 28 28" width="26" height="26" aria-hidden="true">
-          <circle cx="14" cy="16" r="6.4" fill={color} />
-          <path
-            d="M8.6 13.9 L10.7 7.8 L12.8 13.9 L14.9 7.8 L17 13.9 L19.1 7.8 L21 13.6 L21 15.6 L8.6 15.6 Z"
-            fill={color}
-          />
-        </svg>
-      )
-  }
 }
 
 function clamp01(value: number): number {
@@ -129,6 +52,7 @@ export default function GameApp({ durationTicks, countdownTicks, labelledBy }: G
   const attractRef = useRef<HTMLDivElement | null>(null)
   const resultsRef = useRef<HTMLHeadingElement | null>(null)
   const runRef = useRef<HTMLDivElement | null>(null)
+  const pauseCardRef = useRef<HTMLDivElement | null>(null)
   const reducedMotion = usePrefersReducedMotion()
 
   const startRun = useCallback(() => {
@@ -179,6 +103,11 @@ export default function GameApp({ durationTicks, countdownTicks, labelledBy }: G
     setAnnounce('Back to the pond. Ready when you are.')
   }, [])
 
+  const resumeRun = useCallback(() => {
+    setPaused(false)
+    runRef.current?.focus()
+  }, [])
+
   // Announce tier crossings (only — per-catch chatter is worse than silence).
   useEffect(() => {
     if (screen !== 'run') return
@@ -188,6 +117,12 @@ export default function GameApp({ durationTicks, countdownTicks, labelledBy }: G
       setAnnounce(TIERS[tier].name + ' tier reached')
     }
   }, [hud.score, screen])
+
+  // Count the countdown out loud once per second.
+  useEffect(() => {
+    if (screen !== 'run' || hud.phase !== 'countdown' || hud.countdownLeft <= 0) return
+    setAnnounce(String(Math.ceil(hud.countdownLeft / TICKS_PER_SECOND)))
+  }, [screen, hud.phase, hud.countdownLeft])
 
   // Move focus with the screen: run stage on start, results heading on
   // finish, attract panel on quit.
@@ -201,6 +136,33 @@ export default function GameApp({ durationTicks, countdownTicks, labelledBy }: G
     }
     prevScreenRef.current = screen
   }, [screen])
+
+  // Pause dialog: focus Resume on open, trap Tab inside, return focus on close.
+  useEffect(() => {
+    if (screen !== 'run') return
+    if (paused) {
+      pauseCardRef.current?.querySelector<HTMLButtonElement>('button')?.focus()
+      const onKeyDown = (event: KeyboardEvent) => {
+        if (event.key !== 'Tab') return
+        const card = pauseCardRef.current
+        if (!card) return
+        const buttons = Array.from(card.querySelectorAll<HTMLButtonElement>('button'))
+        if (buttons.length === 0) return
+        const first = buttons[0]
+        const last = buttons[buttons.length - 1]
+        if (event.shiftKey && document.activeElement === first) {
+          event.preventDefault()
+          last.focus()
+        } else if (!event.shiftKey && document.activeElement === last) {
+          event.preventDefault()
+          first.focus()
+        }
+      }
+      window.addEventListener('keydown', onKeyDown)
+      return () => window.removeEventListener('keydown', onKeyDown)
+    }
+    runRef.current?.focus()
+  }, [paused, screen])
 
   // Auto-pause when the page loses focus or the tab is hidden.
   useEffect(() => {
@@ -239,89 +201,130 @@ export default function GameApp({ durationTicks, countdownTicks, labelledBy }: G
   const tierProgress = hudNextTier ? (hud.score - hudTier.min) / (hudNextTier.min - hudTier.min) : 1
   const progressPct = Math.round(clamp01(tierProgress) * 100)
 
+  const timeStatClass =
+    hud.timeLeft <= 5
+      ? arcade.hudStatDanger
+      : hud.timeLeft <= 10
+        ? arcade.hudStatWarn
+        : arcade.hudStat
+
   return (
-    <div className={styles.arcade}>
+    <div className={arcade.shell}>
       <div role="status" className="visually-hidden">
         {announce}
       </div>
 
-      <div className={styles.strip}>
-        <span className={styles.badge}>Practice mode</span>
-        <span className={styles.stripMeta}>Free · no wallet · scores stay on this device</span>
+      <div className={arcade.strip}>
+        <span className={arcade.badge}>Practice mode</span>
+        <span className={arcade.stripMeta}>Free · no wallet · scores stay on this device</span>
       </div>
 
       {screen === 'attract' && (
-        <div ref={attractRef} className={styles.attract} tabIndex={-1} aria-labelledby={labelledBy}>
+        <div
+          ref={attractRef}
+          className={arcade.attract + ' ' + arcade.screenIn}
+          tabIndex={-1}
+          aria-labelledby={labelledBy}
+        >
           {labelledBy ? null : (
-            <h3 className={styles.title}>
-              FRONG <span className={styles.accent}>Catch</span>
+            <h3 className={arcade.title}>
+              FRONG <span className={arcade.accent}>Catch</span>
             </h3>
           )}
-          <p className={styles.lede}>
+          <p className={arcade.lede}>
             One minute. Forty-five flies. Move FRONG&apos;s lily pad and catch what falls — the
             rarer the fly, the more points. A perfect run is 109.
           </p>
-          <ul className={styles.legend} aria-label="Fly types and points">
+          <ul className={arcade.legend} aria-label="Fly types and points">
             {FLY_TYPES.map((fly) => (
-              <li key={fly.id} className={styles.legendItem}>
+              <li key={fly.id} className={arcade.legendItem}>
                 <FlyGlyph type={fly.id} />
-                <span className={styles.legendName}>{FLY_LABELS[fly.id]}</span>
-                <span className={styles.legendPoints}>+{fly.points}</span>
-                <span className={styles.legendNote}>{FLY_NOTES[fly.id]}</span>
+                <span className={arcade.legendName}>{FLY_LABELS[fly.id]}</span>
+                <span className={arcade.legendPoints}>+{fly.points}</span>
+                <span className={arcade.legendNote}>{FLY_NOTES[fly.id]}</span>
               </li>
             ))}
           </ul>
-          <ul className={styles.tiers} aria-label="Score tiers">
+          <ul className={arcade.tiers} aria-label="Score tiers">
             {TIERS.map((tier, index) => (
               <li
                 key={tier.name}
                 className={
                   index === bestTierIndex
-                    ? styles.tierItem + ' ' + styles.tierItemBest
-                    : styles.tierItem
+                    ? arcade.tierItem + ' ' + arcade.tierItemBest
+                    : arcade.tierItem
                 }
               >
-                <span className={styles.tierName}>{tier.name}</span>
-                <span className={styles.tierMin}>
+                <span className={arcade.tierName}>{tier.name}</span>
+                <span className={arcade.tierMin}>
                   {tier.min === 0 ? 'any score' : tier.min + '+'}
                 </span>
               </li>
             ))}
           </ul>
-          <div className={styles.actions}>
-            <button type="button" className={styles.button} onClick={startRun}>
+          <div className={arcade.actions}>
+            <button type="button" className="btn btn-primary" onClick={startRun}>
               Play
             </button>
           </div>
           {best > 0 && bestTierName !== null && (
-            <p className={styles.best}>
+            <p className={arcade.best}>
               Your best: <strong>{best}</strong> ({bestTierName})
             </p>
           )}
-          <p className={styles.help}>Move: mouse, touch, or ← → arrow keys. Pause: P or Esc.</p>
+          <p className={arcade.help}>
+            Move: mouse, touch, or ← → arrow keys. Pause: <kbd className="kbd">P</kbd> or{' '}
+            <kbd className="kbd">Esc</kbd>.
+          </p>
         </div>
       )}
 
       {screen === 'run' && (
-        <div className={styles.run} ref={runRef} tabIndex={-1} aria-label="Game run">
-          <div className={styles.hud}>
-            <span className={styles.hudStat}>
-              Score <strong className={styles.hudStrong}>{hud.score}</strong>
-            </span>
-            <span className={styles.hudStat}>
-              Flies <strong className={styles.hudStrong}>{hud.caught}/45</strong>
-            </span>
-            <span className={styles.hudStat}>
-              Time <strong className={styles.hudStrong}>{hud.timeLeft}s</strong>
-            </span>
-          </div>
-          <div className={styles.progress} aria-hidden="true">
-            <div className={styles.progressTrack}>
-              <div className={styles.progressFill} style={{ width: progressPct + '%' }} />
+        <div
+          className={arcade.run + ' ' + arcade.screenIn}
+          ref={runRef}
+          tabIndex={-1}
+          aria-label="Game run"
+        >
+          <div className={arcade.hud}>
+            <div className={arcade.hudStats}>
+              <span className={arcade.hudStat}>
+                Score{' '}
+                <strong key={hud.score} className={arcade.hudStrong + ' ' + arcade.hudStrongPop}>
+                  {hud.score}
+                </strong>
+              </span>
+              <span className={arcade.hudStat}>
+                Flies <strong className={arcade.hudStrong}>{hud.caught}/45</strong>
+              </span>
+              <span className={timeStatClass}>
+                Time <strong className={arcade.hudStrong}>{hud.timeLeft}s</strong>
+              </span>
             </div>
-            <div className={styles.progressMeta}>
-              <span className={styles.progressTier}>{hudTier.name}</span>
-              <span className={styles.progressNext}>
+            <button
+              type="button"
+              className={arcade.hudPause}
+              aria-label="Pause game"
+              onClick={() => setPaused(true)}
+            >
+              <svg width="16" height="16" viewBox="0 0 16 16" aria-hidden="true">
+                <rect x="2.5" y="2" width="4" height="12" rx="1" fill="currentColor" />
+                <rect x="9.5" y="2" width="4" height="12" rx="1" fill="currentColor" />
+              </svg>
+            </button>
+          </div>
+          <div className={arcade.progress} aria-hidden="true">
+            <div className={arcade.progressTrack}>
+              <div className={arcade.progressFill} style={{ width: progressPct + '%' }} />
+            </div>
+            <div className={arcade.progressMeta}>
+              <span
+                key={hudTier.name}
+                className={arcade.progressTier + ' ' + arcade.progressTierPop}
+              >
+                {hudTier.name}
+              </span>
+              <span className={arcade.progressNext}>
                 {hudNextTier
                   ? 'Next: ' + hudNextTier.name + ' at ' + hudNextTier.min
                   : 'Perfect run'}
@@ -329,7 +332,7 @@ export default function GameApp({ durationTicks, countdownTicks, labelledBy }: G
             </div>
           </div>
           <span className="visually-hidden">Current tier: {hudTier.name}</span>
-          <div className={styles.stageWrap}>
+          <div className={arcade.stageWrap}>
             <CanvasStage
               key={runId}
               seed={seed}
@@ -337,31 +340,44 @@ export default function GameApp({ durationTicks, countdownTicks, labelledBy }: G
               countdownTicks={countdownTicks}
               paused={paused}
               reducedMotion={reducedMotion}
-              className={styles.stageInner}
+              className={arcade.stageInner}
               onHud={setHud}
               onFinish={finishRun}
             />
             {hud.phase === 'countdown' && !paused && (
-              <div className={styles.overlay} aria-hidden="true">
-                <span className={styles.getReady}>Get ready</span>
-                <span className={styles.countdown}>
+              <div className={arcade.overlay} aria-hidden="true">
+                <span className={arcade.getReady}>Get ready</span>
+                <span
+                  key={Math.ceil(hud.countdownLeft / TICKS_PER_SECOND)}
+                  className={arcade.countdown}
+                >
                   {Math.ceil(hud.countdownLeft / TICKS_PER_SECOND)}
                 </span>
               </div>
             )}
             {paused && (
-              <div className={styles.overlay}>
-                <p className={styles.pauseTitle}>Paused</p>
-                <div className={styles.actions}>
-                  <button type="button" className={styles.button} onClick={() => setPaused(false)}>
-                    Resume
-                  </button>
-                  <button type="button" className={styles.buttonSecondary} onClick={startRun}>
-                    Restart
-                  </button>
-                  <button type="button" className={styles.buttonGhost} onClick={quitRun}>
-                    Quit
-                  </button>
+              <div
+                className={arcade.overlay}
+                role="dialog"
+                aria-modal="true"
+                aria-label="Pause menu"
+              >
+                <div className={arcade.pauseCard} ref={pauseCardRef}>
+                  <p className={arcade.pauseTitle}>Paused</p>
+                  <div className={arcade.actions}>
+                    <button type="button" className="btn btn-primary" onClick={resumeRun}>
+                      Resume
+                    </button>
+                    <button type="button" className="btn btn-secondary" onClick={startRun}>
+                      Restart
+                    </button>
+                    <button type="button" className="btn btn-ghost" onClick={quitRun}>
+                      Quit
+                    </button>
+                  </div>
+                  <p className={arcade.pauseHint}>
+                    <kbd className="kbd">P</kbd> or <kbd className="kbd">Esc</kbd> to resume
+                  </p>
                 </div>
               </div>
             )}
@@ -370,42 +386,60 @@ export default function GameApp({ durationTicks, countdownTicks, labelledBy }: G
       )}
 
       {screen === 'results' && result !== null && tierName !== null && (
-        <div className={styles.results} aria-labelledby="results-title">
+        <div className={arcade.results + ' ' + arcade.screenIn} aria-labelledby="results-title">
           <p className="eyebrow">Run over</p>
-          <h3 id="results-title" ref={resultsRef} tabIndex={-1} className={styles.resultTier}>
+          <h3 id="results-title" ref={resultsRef} tabIndex={-1} className={arcade.resultTier}>
             {tierName}
           </h3>
-          {beatBest && <p className={styles.newBest}>New best score</p>}
-          <dl className={styles.stats}>
-            <div className={styles.stat}>
+          {beatBest && <p className={arcade.newBest}>New best score</p>}
+          <p className={arcade.flavor}>{TIER_FLAVOR[tierName]}</p>
+          <dl className={arcade.stats}>
+            <div className={arcade.stat}>
               <dt>Score</dt>
-              <dd className={styles.statValue}>
+              <dd className={arcade.statValue}>
                 {result.score}
-                <span className={styles.statUnit}>/109</span>
+                <span className={arcade.statUnit}>/109</span>
               </dd>
             </div>
-            <div className={styles.stat}>
+            <div className={arcade.stat}>
               <dt>Flies</dt>
-              <dd className={styles.statValue}>
+              <dd className={arcade.statValue}>
                 {result.caught}
-                <span className={styles.statUnit}>/45</span>
+                <span className={arcade.statUnit}>/45</span>
               </dd>
             </div>
-            <div className={styles.stat}>
+            <div className={arcade.stat}>
               <dt>Missed</dt>
-              <dd className={styles.statValue}>{result.missed}</dd>
+              <dd className={arcade.statValue}>{result.missed}</dd>
             </div>
-            <div className={styles.stat}>
+            <div className={arcade.stat}>
               <dt>Best</dt>
-              <dd className={styles.statValue}>{best}</dd>
+              <dd className={arcade.statValue}>{best}</dd>
             </div>
           </dl>
-          <div className={styles.actions}>
-            <button type="button" className={styles.button} onClick={startRun}>
+          <ul className={arcade.tiers} aria-label="Score tiers">
+            {TIERS.map((tier, index) => (
+              <li
+                key={tier.name}
+                className={
+                  index === tierForScore(result.score)
+                    ? arcade.tierItem + ' ' + arcade.tierItemBest
+                    : arcade.tierItem
+                }
+              >
+                <span className={arcade.tierName}>{tier.name}</span>
+                <span className={arcade.tierMin}>
+                  {tier.min === 0 ? 'any score' : tier.min + '+'}
+                </span>
+              </li>
+            ))}
+          </ul>
+          <div className={arcade.actions}>
+            <button type="button" className="btn btn-primary" onClick={startRun}>
               Play again
             </button>
             <a
-              className={styles.buttonSecondary}
+              className="btn btn-secondary"
               href={buildShareUrl(result.score, result.caught, tierName)}
               target="_blank"
               rel="noreferrer"
@@ -413,7 +447,7 @@ export default function GameApp({ durationTicks, countdownTicks, labelledBy }: G
               Share on X
             </a>
           </div>
-          <p className={styles.help}>
+          <p className={arcade.help}>
             Practice mode — scores stay on this device. No prizes, just pond pride.
           </p>
         </div>

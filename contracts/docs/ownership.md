@@ -14,9 +14,19 @@ so setting `admin` to a Safe address gives the Safe's owners the admin powers
 (pause, unpause, setMinter, setRateCap, proposeAdmin) through the Safe's own
 threshold signing — no changes to the contract are required.
 
-`FrongEntry.owner` stays a plain address for the same reason, but this phase
-only adds 2-step rotation to the trophy `admin` (D8). Treasury/gas-reserve
+`FrongEntry.owner` stays a plain address for the same reason and now uses the
+same 2-step rotation pattern as the trophy `admin`. Treasury/gas-reserve
 rotation on `FrongEntry` uses its own 2-step timelock (see D5/D10).
+
+`FrongEntry.setPrice` is also a propose → accept operation. The new price is
+held in `pendingPrice` for `PRICE_TIMELOCK` (24 hours) before the owner may
+call `acceptPrice()`. A payment always emits the price actually charged in its
+`Paid` event, so a later price change cannot rewrite payment history.
+
+The deployer is intentionally temporary. `deploy-testnet.ts` requires a
+distinct `GOVERNANCE_ADDRESS`, grants the separate `MINTER_ADDRESS`, then
+proposes the Safe/multisig as both entry owner and trophy admin. The rotation
+must be accepted after the timelock before a release is considered governed.
 
 ---
 
@@ -101,9 +111,9 @@ Sources:
 
 ## 4. Decision log
 
-| #   | Decision                                                      | Status                                   |
-| --- | ------------------------------------------------------------- | ---------------------------------------- |
-| 1   | `admin` is a plain `address`, Safe-compatible by construction | Done (this phase)                        |
-| 2   | 2-step admin transfer with 24h timelock on `FrongTrophy`      | Implemented (D8)                         |
-| 3   | Safe is deployed on 46630 (all v1.3.0 singletons present)     | Verified read-only                       |
-| 4   | Trophy soulbound vs transferable                              | See `transfer-policy.md` — PENDING OWNER |
+| #   | Decision                                                      | Status                                           |
+| --- | ------------------------------------------------------------- | ------------------------------------------------ |
+| 1   | `admin` is a plain `address`, Safe-compatible by construction | Done (this phase)                                |
+| 2   | 2-step admin transfer with 24h timelock on `FrongTrophy`      | Implemented (D8)                                 |
+| 3   | Safe is deployed on 46630 (all v1.3.0 singletons present)     | Verified read-only                               |
+| 4   | Trophy soulbound vs transferable                              | Transferable (`soulbound = false`) — implemented |

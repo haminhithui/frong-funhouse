@@ -43,6 +43,29 @@ describe('minter signers', () => {
     expect(createSigner(testConfig()).mode).toBe('none')
   })
 
+  it('requires KMS on mainnet even when NODE_ENV is unset', () => {
+    expect(() =>
+      createSigner(testConfig({ chainId: 4663, minterKey: '0x' + 'dd'.repeat(32) })),
+    ).toThrow('mainnet 4663')
+    expect(() => createSigner(testConfig({ chainId: 4663 }))).toThrow('requires KMS')
+    expect(
+      createSigner(
+        testConfig({
+          chainId: 4663,
+          kmsRegion: 'us-east-1',
+          kmsKeyId: 'key-1',
+          kmsMinerAddress: '0x' + 'aa'.repeat(20),
+        }),
+      ).mode,
+    ).toBe('kms')
+  })
+
+  it('rejects partial KMS configuration instead of silently falling back', () => {
+    expect(() => createSigner(testConfig({ kmsRegion: 'us-east-1', kmsKeyId: 'key-1' }))).toThrow(
+      'incomplete KMS configuration',
+    )
+  })
+
   it('AwsKmsSigner signs messages through KMS Sign and recovers to the configured address', async () => {
     const key = generatePrivateKey()
     const account = privateKeyToAccount(key)
@@ -53,7 +76,13 @@ describe('minter signers', () => {
         if (!message) throw new Error('no message')
         const hash = ('0x' + Buffer.from(message).toString('hex')) as Hex
         const signature = await account.sign({ hash })
-        return { Signature: hexToBytes(signature).subarray(0, 64) }
+        const raw = hexToBytes(signature)
+        const order = BigInt('0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFEBAAEDCE6AF48A03BBFD25E8CD0364141')
+        const highS = order - BigInt('0x' + Buffer.from(raw.subarray(32, 64)).toString('hex'))
+        const highSBytes = hexToBytes(('0x' + highS.toString(16).padStart(64, '0')) as Hex)
+        return {
+          Signature: new Uint8Array([...raw.subarray(0, 32), ...highSBytes]),
+        }
       },
     }
     const signer = new AwsKmsSigner({
@@ -67,6 +96,10 @@ describe('minter signers', () => {
     const signature = await acct.signMessage({ message: 'hello-frong' })
     const recovered = await recoverAddress({ hash: hashMessage('hello-frong'), signature })
     expect(recovered.toLowerCase()).toBe(account.address.toLowerCase())
+    const serializedS = BigInt('0x' + signature.slice(66, 130))
+    expect(serializedS).toBeLessThanOrEqual(
+      BigInt('0x7FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF5D576E7357A4501DDFE92F46681B20A0'),
+    )
   })
 
   it('AwsKmsSigner surfaces KMS errors instead of swallowing them', async () => {

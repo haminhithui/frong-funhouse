@@ -12,6 +12,14 @@ export const TIER_SLUGS = [
   'not-wrong',
 ] as const
 
+export const TIER_ASSET_EXTENSION = 'svg'
+
+function metadataBaseUrl(config: ServerConfig): string {
+  const base = config.metadataBaseUrl.trim().replace(/\/+$/, '')
+  if (!base) throw new Error('METADATA_BASE_URL is required for trophy metadata')
+  return base
+}
+
 /**
  * Rarity is backend-decided and skill-gated: the tier comes from the
  * replay-verified score via the shared tier table. There is no random roll,
@@ -43,6 +51,7 @@ export function buildMetadata(
   fliesCaught: number,
   seedCommitmentHex: string,
 ): { json: TrophyMetadata; uri: string } {
+  const baseUrl = metadataBaseUrl(config)
   const json: TrophyMetadata = {
     name: 'FRONG Catch Trophy #' + tokenId + ' — ' + tier.name,
     description:
@@ -53,7 +62,7 @@ export function buildMetadata(
       '/45 flies. Tier: ' +
       tier.name +
       '.',
-    image: config.metadataBaseUrl + '/assets/tiers/' + tier.slug + '.png',
+    image: baseUrl + '/assets/tiers/' + tier.slug + '.' + TIER_ASSET_EXTENSION,
     attributes: [
       { trait_type: 'Tier', value: tier.name },
       { trait_type: 'Score', value: score },
@@ -61,7 +70,7 @@ export function buildMetadata(
       { trait_type: 'Seed Commitment', value: seedCommitmentHex },
     ],
   }
-  return { json, uri: config.metadataBaseUrl + '/metadata/' + tokenId + '.json' }
+  return { json, uri: baseUrl + '/metadata/' + tokenId + '.json' }
 }
 
 export interface ChainAttestation {

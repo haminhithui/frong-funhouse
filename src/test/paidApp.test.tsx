@@ -1,11 +1,12 @@
 import { act } from 'react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-import { render, screen } from '@testing-library/react'
+import { render, screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { privateKeyToAccount } from 'viem/accounts'
 import { hexToString } from 'viem'
 import type { Hex } from 'viem'
 import PaidApp from '../paid/PaidApp'
+import { savePendingPayment } from '../paid/paymentRecovery'
 
 // The Privy SDK is mocked in jsdom tests (no real Privy app); the enabled
 // Privy path is covered in paidPrivy.test.tsx.
@@ -71,6 +72,23 @@ function installStubWallet() {
         case 'eth_sendTransaction':
           sendCount += 1
           return '0x' + String(sendCount).padStart(2, '0').repeat(32)
+        case 'eth_getTransactionReceipt':
+          return {
+            transactionHash: String(params?.[0] ?? '0x' + '00'.repeat(32)),
+            transactionIndex: '0x0',
+            blockHash: '0x' + '11'.repeat(32),
+            blockNumber: '0x1',
+            from: PLAYER.address,
+            to: '0x' + '22'.repeat(20),
+            cumulativeGasUsed: '0x1',
+            gasUsed: '0x1',
+            contractAddress: null,
+            logs: [],
+            logsBloom: '0x' + '00'.repeat(256),
+            status: '0x1',
+            effectiveGasPrice: '0x1',
+            type: '0x0',
+          }
         default:
           throw new Error('unhandled wallet method: ' + method)
       }
@@ -83,6 +101,8 @@ function installStubWallet() {
 function mockNetwork(
   mintSequence: string[] = ['queued', 'minted'],
   configBuildHash: string = SIM_HASH,
+  configStatus = 200,
+  sessionConsumed = false,
 ) {
   let mintPoll = 0
   const submits: Record<string, unknown>[] = []
@@ -103,22 +123,27 @@ function mockNetwork(
       throw new Error('unexpected raw RPC fetch: ' + url)
     }
     if (url === SERVER + '/api/config' && method === 'GET') {
-      return json(200, {
-        chainId: 31337,
-        frong: '0x' + '11'.repeat(20),
-        entry: '0x' + '22'.repeat(20),
-        trophy: '0x' + '33'.repeat(20),
-        feeAmount: '1000000000000000000000',
-        countdownTicks: 1,
-        durationTicks: 60,
-        buildHash: configBuildHash,
-      })
+      return json(
+        configStatus,
+        configStatus === 200
+          ? {
+              chainId: 31337,
+              frong: '0x' + '11'.repeat(20),
+              entry: '0x' + '22'.repeat(20),
+              trophy: '0x' + '33'.repeat(20),
+              feeAmount: '1000000000000000000000',
+              countdownTicks: 1,
+              durationTicks: 60,
+              buildHash: configBuildHash,
+            }
+          : { error: 'maintenance' },
+      )
     }
     if (url === SERVER + '/api/challenge') {
       return json(200, { nonce: 'nonce-1', message: 'frong-challenge-message' })
     }
     if (url === SERVER + '/api/verify') {
-      return json(200, { authToken: 'auth-token-1', expiresAt: Date.now() + 60000 })
+      return json(200, { authToken: 'a'.repeat(64), expiresAt: Date.now() + 60000 })
     }
     if (url === SERVER + '/api/session') {
       return json(200, {
@@ -126,6 +151,7 @@ function mockNetwork(
         seed: 12345,
         buildHash: configBuildHash,
         expiresAt: Date.now() + 60000,
+        ...(sessionConsumed ? { consumed: true } : {}),
         countdownTicks: 1,
         durationTicks: 60,
       })
@@ -195,8 +221,10 @@ describe('FRONG Catch paid app', () => {
 
     // WalletConnect is enabled with the wired Reown Cloud project id.
     expect(screen.getByRole('button', { name: 'Connect with WalletConnect' })).toBeEnabled()
-    // Privy is enabled: the local .env carries the configured app id.
-    expect(screen.getByRole('button', { name: 'Continue with Privy' })).toBeEnabled()
+    // Privy is optional per deployment. Its enabled path is covered by the
+    // dedicated paidPrivy suite; this package test only requires the control
+    // to be present and fail closed when no app id is available.
+    expect(screen.getByRole('button', { name: 'Continue with Privy' })).toBeInTheDocument()
 
     // W2 -> W3 verify
     await user.click(screen.getByRole('button', { name: 'Connect injected wallet' }))
@@ -221,6 +249,7 @@ describe('FRONG Catch paid app', () => {
 
     // P1: wallet state reads go through the connected wallet, never a raw RPC fetch.
     expect(wallet.calls.some((c) => c.method === 'eth_call')).toBe(true)
+    expect(wallet.calls.some((c) => c.method === 'eth_getTransactionReceipt')).toBe(true)
     expect(rpcFetches).toHaveLength(0)
     // P2: the approve is for EXACTLY the current fee (1000 FRONG), never maxUint256.
     const approveTx = sends[0]?.params[0] as { data?: string } | undefined
@@ -267,9 +296,37 @@ describe('FRONG Catch paid app', () => {
     expect(await screen.findByText(/No injected wallet found/)).toBeInTheDocument()
   })
 
+  it('clears a recovered marker after the server proves the payment was already consumed', async () => {
+    const user = userEvent.setup()
+    installStubWallet()
+    savePendingPayment({
+      paymentId: '0x' + '11'.repeat(32),
+      txHash: '0x' + '22'.repeat(32),
+      chainId: 31337,
+      player: PLAYER.address,
+      createdAt: Date.now(),
+    })
+    mockNetwork(['queued', 'minted'], SIM_HASH, 200, true)
+    render(<PaidApp />)
+
+    await user.click(screen.getByRole('button', { name: 'Play' }))
+    await user.click(screen.getByRole('button', { name: 'Play' }))
+    await user.click(screen.getByRole('button', { name: 'Connect injected wallet' }))
+    await user.click(await screen.findByRole('button', { name: 'Sign to verify' }))
+    await user.click(await screen.findByRole('button', { name: 'Retry recovery' }))
+
+    expect(await screen.findByRole('heading', { name: 'Entry review' })).toBeInTheDocument()
+    expect(screen.getByText(/already completed its run/i)).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: /Pay .* and play/ })).toBeEnabled()
+    expect(window.localStorage.getItem('frong-catch.pending-payment.v1')).toBeNull()
+  }, 30_000)
+
   it('links back to the free practice section on the fan page', async () => {
     mockNetwork()
     render(<PaidApp />)
+    await waitFor(() => {
+      expect(screen.queryByText(/Checking game server configuration/i)).not.toBeInTheDocument()
+    })
     const practice = screen.getAllByRole('link', { name: /practice/i })
     expect(practice.length).toBeGreaterThan(0)
     expect(practice[0]).toHaveAttribute('href', '/#play')
@@ -300,6 +357,48 @@ describe('FRONG Catch paid app', () => {
 
     await user.click(screen.getByRole('button', { name: 'Back' }))
     expect(onExit).toHaveBeenCalledTimes(1)
+  })
+
+  it('keeps the embedded paid CTA disabled while config is loading', async () => {
+    let resolveConfig!: (response: Response) => void
+    const configResponse = new Promise<Response>((resolve) => {
+      resolveConfig = resolve
+    })
+    vi.stubGlobal('fetch', async (input: RequestInfo | URL) => {
+      if (String(input) === SERVER + '/api/config') return configResponse
+      throw new Error('unhandled fetch: ' + String(input))
+    })
+
+    render(<PaidApp embedded />)
+
+    expect(screen.getByText(/Checking game server configuration/i)).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'Play' })).toBeDisabled()
+
+    resolveConfig(
+      new Response(
+        JSON.stringify({
+          chainId: 31337,
+          frong: '0x' + '11'.repeat(20),
+          entry: '0x' + '22'.repeat(20),
+          trophy: '0x' + '33'.repeat(20),
+          feeAmount: '1000000000000000000000',
+          countdownTicks: 1,
+          durationTicks: 60,
+          buildHash: SIM_HASH,
+        }),
+        { status: 200, headers: { 'Content-Type': 'application/json' } },
+      ),
+    )
+
+    expect(await screen.findByRole('button', { name: 'Play' })).toBeEnabled()
+  })
+
+  it('fails closed in embedded mode when config is non-2xx', async () => {
+    mockNetwork(['queued', 'minted'], SIM_HASH, 503)
+    render(<PaidApp embedded />)
+
+    expect(await screen.findByText(/HTTP 503.*Paid runs are disabled/i)).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'Play' })).toBeDisabled()
   })
 
   it('resets the flow when the wallet account or chain changes (accountsChanged/chainChanged)', async () => {

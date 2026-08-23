@@ -3,8 +3,8 @@ import userEvent from '@testing-library/user-event'
 import GameApp from '../game/GameApp'
 import { loadBestScore, saveBestScore } from '../game/util'
 
-/** A fast run for tests: 1-tick countdown, 60-tick (1s) game. */
-const SHORT_RUN = { durationTicks: 60, countdownTicks: 1 }
+/** A deterministic short run for tests: 1-tick countdown, 12-tick game. */
+const SHORT_RUN = { durationTicks: 12, countdownTicks: 1 }
 
 beforeEach(() => {
   // jsdom has no canvas implementation; keep getContext a quiet no-op.

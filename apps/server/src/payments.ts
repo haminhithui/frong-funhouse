@@ -2,7 +2,7 @@ import { createPublicClient, decodeEventLog, http, parseAbi } from 'viem'
 import type { Hex } from 'viem'
 import type { ServerConfig } from './config'
 import { chainFor } from './chain'
-import type { Store } from './store'
+import type { PaymentSessionInput, PaymentSessionResult, Store } from './store'
 
 export const ENTRY_ABI = parseAbi([
   'event Paid(address indexed player, bytes32 indexed paymentId, uint256 amount)',
@@ -55,7 +55,45 @@ export function createPaymentClient(config: ServerConfig): PaymentClient {
   }
 }
 
-export type PaymentResult = { ok: true; blockNumber: bigint } | { ok: false; reason: string }
+export type PaymentResult =
+  { ok: true; blockNumber: bigint } | { ok: false; reason: string; retryable?: boolean }
+
+function isRetryableChainError(error: unknown): boolean {
+  const seen = new Set<unknown>()
+  let current: unknown = error
+  while (current && !seen.has(current)) {
+    seen.add(current)
+    if (typeof current === 'object' && current !== null) {
+      const name = 'name' in current ? String((current as { name?: unknown }).name ?? '') : ''
+      if (
+        name.includes('HttpRequest') ||
+        name.includes('Timeout') ||
+        name.includes('Network') ||
+        name.includes('Socket') ||
+        name.includes('Rpc')
+      ) {
+        return true
+      }
+      current = 'cause' in current ? (current as { cause?: unknown }).cause : undefined
+    } else {
+      break
+    }
+  }
+  return false
+}
+
+/**
+ * Recovery primitive for the /api/session parent route. Call this after chain
+ * validation succeeds, or after a prior "payment already used" response: the
+ * Store returns the original durable session when one exists and creates the
+ * binding exactly once when validation consumed the payment before a crash.
+ */
+export function recoverPaymentSession(
+  store: Store,
+  input: PaymentSessionInput,
+): PaymentSessionResult {
+  return store.getOrCreatePaymentSession(input)
+}
 
 /**
  * Validates a payment against the chain: the receipt must exist, succeed, be
@@ -81,12 +119,19 @@ export async function validatePayment(
   let receipt: PaymentReceipt
   try {
     receipt = await client.getTransactionReceipt({ hash: txHash as Hex })
-  } catch {
-    return { ok: false, reason: 'transaction not found on chain' }
+  } catch (error) {
+    return isRetryableChainError(error)
+      ? { ok: false, reason: 'payment RPC unavailable', retryable: true }
+      : { ok: false, reason: 'transaction not found on chain' }
   }
   if (receipt.status !== 'success') return { ok: false, reason: 'transaction reverted' }
 
-  const head = await client.getBlockNumber()
+  let head: bigint
+  try {
+    head = await client.getBlockNumber()
+  } catch {
+    return { ok: false, reason: 'payment RPC unavailable', retryable: true }
+  }
   if (head - receipt.blockNumber < BigInt(config.confirmations)) {
     return { ok: false, reason: 'transaction not final yet' }
   }
@@ -157,13 +202,20 @@ export async function validatePayment(
   try {
     chainPrice = await client.readPrice(config.entry as Hex, receipt.blockNumber)
   } catch {
-    return { ok: false, reason: 'could not read the on-chain price' }
+    return { ok: false, reason: 'could not read the on-chain price', retryable: true }
   }
   if (paid.amount !== chainPrice) {
     return { ok: false, reason: 'paid amount does not match the on-chain price' }
   }
 
-  if (!store.consumePayment(txHash)) return { ok: false, reason: 'payment already used' }
+  if (
+    !store.consumePayment(txHash, {
+      player: expectedPlayer,
+      paymentId: expectedPaymentId,
+    })
+  ) {
+    return { ok: false, reason: 'payment already used' }
+  }
 
   return { ok: true, blockNumber: receipt.blockNumber }
 }

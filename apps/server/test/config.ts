@@ -33,6 +33,7 @@ export function testConfig(overrides: Partial<ServerConfig> = {}): ServerConfig 
     kmsRegion: null,
     kmsKeyId: null,
     kmsMinerAddress: null,
+    operatorToken: null,
     ...overrides,
   }
 }

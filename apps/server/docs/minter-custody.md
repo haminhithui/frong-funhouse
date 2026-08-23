@@ -25,6 +25,7 @@ KMS_REGION=            # e.g. us-east-1 (when provisioned, separately authorized
 KMS_KEY_ID=            # KMS key id / ARN (never a private key)
 KMS_MINTER_ADDRESS=    # minter's PUBLIC address (not secret)
 MINTER_KEY=            # dev/testnet ONLY - empty in production
+OPERATOR_TOKEN=        # recovery endpoint credential; random >=32 chars in production
 ```
 
 ## Rotation
@@ -44,6 +45,16 @@ MINTER_KEY=            # dev/testnet ONLY - empty in production
   sliding rate cap (100/hour) bounds damage before revocation lands.
 - The mint queue never double-mints: `ownerOf` idempotency plus ERC-721
   duplicate-id revert.
+
+## Terminal queue recovery
+
+After five bounded mint attempts, a record enters `delayed` and remains
+terminal until an operator explicitly requeues it. The recovery endpoint is
+`POST /api/admin/mints/:tokenId/requeue` with `X-Operator-Token`; it refuses
+records that already have a transaction hash and never accepts a wallet bearer
+token as an operator credential. Configure the credential through
+`OPERATOR_TOKEN`, keep it outside the repository, and rotate it through the
+deployment secret manager.
 
 ## Least privilege
 

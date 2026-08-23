@@ -16,7 +16,7 @@ export function HeroSection({ hero }: { hero: HeroConfig }) {
           </h1>
           <p className={styles.support}>{hero.support}</p>
           <div className={styles.actions}>
-            <a className={styles.primary} href={hero.ctaHref}>
+            <a className="btn btn-primary" href={hero.ctaHref}>
               {hero.ctaLabel}
             </a>
           </div>

@@ -3,7 +3,12 @@ export const RPC_URL = import.meta.env.VITE_RPC_URL ?? 'http://127.0.0.1:8545'
 /** Official testnet/mainnet endpoints — testnet pinned from official Robinhood Chain docs (verified live). */
 export const RPC_URL_46630 =
   import.meta.env.VITE_RPC_URL_46630 ?? 'https://rpc.testnet.chain.robinhood.com/rpc'
-export const RPC_URL_4663 = import.meta.env.VITE_RPC_URL_4663 ?? RPC_URL
+/**
+ * Mainnet deliberately has no localhost fallback. A missing mainnet RPC must
+ * disable mainnet wallet discovery/add-chain flows instead of routing a
+ * chain-4663 wallet through a local node by accident.
+ */
+export const RPC_URL_4663 = String(import.meta.env.VITE_RPC_URL_4663 ?? '').trim()
 /** Official block explorer URLs (testnet/mainnet) — testnet verified live. */
 export const EXPLORER_URL_46630 = String(
   import.meta.env.VITE_EXPLORER_URL_46630 ?? 'https://explorer.testnet.chain.robinhood.com',
@@ -41,6 +46,25 @@ export const PRIVY_LOGIN_METHODS = String(
  */
 export const PRIVY_WAIT_POLL_MS = Number(import.meta.env.VITE_PRIVY_WAIT_POLL_MS ?? 250)
 export const PRIVY_WAIT_TIMEOUT_MS = Number(import.meta.env.VITE_PRIVY_WAIT_TIMEOUT_MS ?? 120_000)
+
+function isSafeRpcUrl(chainId: number, value: string): boolean {
+  try {
+    const url = new URL(value)
+    if (url.protocol !== 'http:' && url.protocol !== 'https:') return false
+    if (url.username || url.password) return false
+    if (chainId === 46630 || chainId === 4663) {
+      const hostname = url.hostname.toLowerCase().replace(/^\[|\]$/g, '')
+      return url.protocol === 'https:' && !['localhost', '127.0.0.1', '::1'].includes(hostname)
+    }
+    return true
+  } catch {
+    return false
+  }
+}
+
+export function isRpcConfigured(chainId: number): boolean {
+  return isSafeRpcUrl(chainId, rpcUrlFor(chainId))
+}
 
 export function rpcUrlFor(chainId: number): string {
   if (chainId === 46630) return RPC_URL_46630

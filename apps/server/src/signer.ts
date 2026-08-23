@@ -11,7 +11,7 @@ import {
   type SignableMessage,
 } from 'viem'
 import { privateKeyToAccount, toAccount } from 'viem/accounts'
-import type { ServerConfig } from './config'
+import { isProductionLike, type ServerConfig } from './config'
 
 /**
  * Mint-signing abstraction. The raw key material never leaves the signer:
@@ -61,6 +61,23 @@ interface RawSignature {
   yParity: 0 | 1
 }
 
+// EIP-2 rejects high-S transaction signatures. AWS KMS may return either
+// valid ECDSA representative, so normalize S and flip parity before viem
+// serializes the transaction.
+const SECP256K1_ORDER = BigInt('0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFEBAAEDCE6AF48A03BBFD25E8CD0364141')
+const SECP256K1_HALF_ORDER = SECP256K1_ORDER / 2n
+
+function lowSSignature(signature: RawSignature): RawSignature {
+  const s = BigInt(signature.s)
+  if (s <= SECP256K1_HALF_ORDER) return signature
+  const normalized = SECP256K1_ORDER - s
+  return {
+    r: signature.r,
+    s: ('0x' + normalized.toString(16).padStart(64, '0')) as Hex,
+    yParity: signature.yParity === 0 ? 1 : 0,
+  }
+}
+
 /**
  * AWS KMS-backed viem account (established viem custom-account pattern).
  * Signs only digests via KMS Sign (MessageType DIGEST, ECDSA_SHA_256) and
@@ -96,7 +113,7 @@ export class AwsKmsSigner implements MinterSigner {
         try {
           const recovered = await recoverAddress({ hash, signature: { r, s, yParity } })
           if (recovered.toLowerCase() === address) {
-            return { r, s, yParity }
+            return lowSSignature({ r, s, yParity })
           }
         } catch {
           // Wrong parity - try the other one.
@@ -140,7 +157,26 @@ export type SignerMode = 'kms' | 'env' | 'none'
  * Production with a plaintext key and no KMS FAILS CLOSED (throws).
  */
 export function createSigner(config: ServerConfig): { signer: MinterSigner; mode: SignerMode } {
+  const mainnet = config.chainId === 4663
+  const productionLike = isProductionLike(config)
+  const kmsConfigured = [config.kmsRegion, config.kmsKeyId, config.kmsMinerAddress].filter(
+    Boolean,
+  ).length
   const kmsReady = Boolean(config.kmsRegion && config.kmsKeyId && config.kmsMinerAddress)
+  if (kmsConfigured > 0 && !kmsReady) {
+    throw new Error(
+      'incomplete KMS configuration - set KMS_REGION/KMS_KEY_ID/KMS_MINTER_ADDRESS together',
+    )
+  }
+  if (config.kmsMinerAddress && !/^0x[0-9a-fA-F]{40}$/.test(config.kmsMinerAddress)) {
+    throw new Error('KMS_MINTER_ADDRESS must be a valid Ethereum address')
+  }
+  if (mainnet && config.minterKey) {
+    throw new Error('MINTER_KEY is forbidden on mainnet 4663 - configure KMS custody')
+  }
+  if (productionLike && config.minterKey) {
+    throw new Error('MINTER_KEY is not allowed in production - configure KMS custody')
+  }
   if (kmsReady) {
     return {
       signer: new AwsKmsSigner({
@@ -151,12 +187,13 @@ export function createSigner(config: ServerConfig): { signer: MinterSigner; mode
       mode: 'kms',
     }
   }
+  if (mainnet || productionLike) {
+    throw new Error(
+      (mainnet ? 'mainnet 4663' : 'production') +
+        ' requires KMS_REGION/KMS_KEY_ID/KMS_MINTER_ADDRESS; plaintext MINTER_KEY is disabled',
+    )
+  }
   if (config.minterKey) {
-    if (process.env.NODE_ENV === 'production') {
-      throw new Error(
-        'MINTER_KEY is not allowed in production - configure KMS_REGION/KMS_KEY_ID/KMS_MINTER_ADDRESS instead',
-      )
-    }
     return { signer: new EnvKeySigner(config.minterKey), mode: 'env' }
   }
   return { signer: new EnvKeySigner(null), mode: 'none' }
