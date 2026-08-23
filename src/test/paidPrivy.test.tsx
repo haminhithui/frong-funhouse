@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-import { render, screen } from '@testing-library/react'
+import { render, screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 
 /** The build-time sim hash injected by vite.config define (same in vitest). */
@@ -14,25 +14,32 @@ const SIM_HASH = import.meta.env.VITE_SIM_BUILD_HASH ?? 'be'.repeat(32)
 // a React re-render.
 const privy = vi.hoisted(() => {
   const calls: string[] = []
+  const chain = { id: '0x1' }
   const provider = {
     request: async ({ method }: { method: string; params?: unknown[] }) => {
       calls.push(method)
       if (method === 'eth_accounts' || method === 'eth_requestAccounts') {
         return ['0x3c44cdddb6a900fa2b585dd299e03d12fa4293bc']
       }
-      if (method === 'eth_chainId') return '0x7a69'
+      if (method === 'eth_chainId') return chain.id
+      if (method === 'wallet_switchEthereumChain') {
+        chain.id = '0x7a69'
+        return null
+      }
+      if (method === 'wallet_addEthereumChain') return null
       throw new Error('unhandled method ' + method)
     },
   }
   const wallet = {
     address: '0x3c44cdddb6a900fa2b585dd299e03d12fa4293bc',
-    chainId: 'eip155:31337',
+    chainId: 'eip155:1',
     walletClientType: 'privy',
     getEthereumProvider: vi.fn(async () => provider),
   }
   const state = { wallets: [] as (typeof wallet)[] }
   return {
     calls,
+    chain,
     wallet,
     state,
     login: vi.fn(async () => {
@@ -122,7 +129,7 @@ function mockNetwork() {
       privyVerifyBodies.push(body as Record<string, string>)
       return body.accessToken === 'privy-access-token' && body.idToken === 'privy-id-token'
         ? json(200, {
-            authToken: 'privy-auth-token',
+            authToken: 'b'.repeat(64),
             expiresAt: Date.now() + 60000,
             address: '0x3c44cdddb6a900fa2b585dd299e03d12fa4293bc',
           })
@@ -145,12 +152,22 @@ beforeEach(() => {
 afterEach(() => {
   vi.unstubAllGlobals()
   privy.calls.length = 0
+  privy.chain.id = '0x1'
+  privy.wallet.chainId = 'eip155:1'
   privy.state.wallets.length = 0
   privy.login.mockClear()
   privy.logout.mockClear()
   privy.getAccessToken.mockClear()
   privyVerifyBodies.length = 0
 })
+
+async function clickPrivy(user: ReturnType<typeof userEvent.setup>) {
+  await screen.findByRole('button', { name: 'Continue with Privy' })
+  await waitFor(() =>
+    expect(screen.getByRole('button', { name: 'Continue with Privy' })).toBeEnabled(),
+  )
+  await user.click(screen.getByRole('button', { name: 'Continue with Privy' }))
+}
 
 describe('FRONG Catch paid app — Privy login', () => {
   it('surfaces a login failure instead of failing silently', async () => {
@@ -161,7 +178,7 @@ describe('FRONG Catch paid app — Privy login', () => {
     await user.click(screen.getByRole('button', { name: 'Play' }))
     await user.click(screen.getByRole('button', { name: 'Play' }))
 
-    await user.click(screen.getByRole('button', { name: 'Continue with Privy' }))
+    await clickPrivy(user)
     expect(
       await screen.findByText(/Privy login failed/i, {}, { timeout: 8000 }),
     ).toBeInTheDocument()
@@ -198,7 +215,7 @@ describe('FRONG Catch paid app — Privy login', () => {
     await user.click(screen.getByRole('button', { name: 'Play' }))
     await user.click(screen.getByRole('button', { name: 'Play' }))
 
-    await user.click(screen.getByRole('button', { name: 'Continue with Privy' }))
+    await clickPrivy(user)
     expect(
       await screen.findByText(/Could not reach the game server/i, {}, { timeout: 8000 }),
     ).toBeInTheDocument()
@@ -217,7 +234,7 @@ describe('FRONG Catch paid app — Privy login', () => {
     await user.click(screen.getByRole('button', { name: 'Play' }))
     await user.click(screen.getByRole('button', { name: 'Play' }))
 
-    await user.click(screen.getByRole('button', { name: 'Continue with Privy' }))
+    await clickPrivy(user)
     expect(
       await screen.findByRole('heading', { name: 'Entry review' }, { timeout: 8000 }),
     ).toBeInTheDocument()
@@ -236,7 +253,7 @@ describe('FRONG Catch paid app — Privy login', () => {
     await user.click(screen.getByRole('button', { name: 'Play' }))
     await user.click(screen.getByRole('button', { name: 'Play' }))
 
-    await user.click(screen.getByRole('button', { name: 'Continue with Privy' }))
+    await clickPrivy(user)
     expect(
       await screen.findByText(/Privy login did not complete/i, {}, { timeout: 8000 }),
     ).toBeInTheDocument()
@@ -260,7 +277,7 @@ describe('FRONG Catch paid app — Privy login', () => {
     await user.click(screen.getByRole('button', { name: 'Play' }))
     await user.click(screen.getByRole('button', { name: 'Play' }))
 
-    await user.click(screen.getByRole('button', { name: 'Continue with Privy' }))
+    await clickPrivy(user)
     expect(
       await screen.findByRole('heading', { name: 'Entry review' }, { timeout: 8000 }),
     ).toBeInTheDocument()
@@ -270,6 +287,7 @@ describe('FRONG Catch paid app — Privy login', () => {
     expect(privy.login).toHaveBeenCalledTimes(1)
     expect(privy.getAccessToken).toHaveBeenCalledTimes(1)
     expect(privy.wallet.getEthereumProvider).toHaveBeenCalled()
+    expect(privy.calls).toContain('wallet_switchEthereumChain')
     expect(screen.getByText(/non-refundable/i)).toBeInTheDocument()
     expect(screen.getByText(/0x3c44/i)).toBeInTheDocument()
   })
@@ -281,7 +299,7 @@ describe('FRONG Catch paid app — Privy login', () => {
     await user.click(screen.getByRole('button', { name: 'Play' }))
     await user.click(screen.getByRole('button', { name: 'Play' }))
 
-    await user.click(screen.getByRole('button', { name: 'Continue with Privy' }))
+    await clickPrivy(user)
     await screen.findByRole('heading', { name: 'Entry review' }, { timeout: 8000 })
 
     // The server needs BOTH tokens: the access token (signature verification)

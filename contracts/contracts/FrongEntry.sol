@@ -7,7 +7,8 @@ import { ReentrancyGuard } from "@openzeppelin/contracts/utils/ReentrancyGuard.s
 /**
  * FRONG entry payment. FRONG flows exactly one way: player -> this contract.
  * The game never mints, burns, pays out, or withdraws FRONG. Immutable, no
- * proxy; price is operator-settable storage; fees accumulate until swept.
+ * proxy; price changes are owner-proposed and timelocked; fees accumulate
+ * until swept.
  *
  * Treasury/gas accounting: collected FRONG is swept 70% to treasury and the
  * remainder (30% + rounding dust) to gasReserve (the gas-sponsorship float).
@@ -18,6 +19,7 @@ import { ReentrancyGuard } from "@openzeppelin/contracts/utils/ReentrancyGuard.s
 contract FrongEntry is ReentrancyGuard {
     uint256 public constant ROTATION_TIMELOCK = 24 hours;
     uint256 public constant OWNER_TIMELOCK = 24 hours;
+    uint256 public constant PRICE_TIMELOCK = 24 hours;
 
     // Price bounds (D2): 1 FRONG .. 1,000,000 FRONG. setPrice is admin-only
     // (multisig/timelock-compatible 2-step owner) and never leaves this range.
@@ -26,6 +28,8 @@ contract FrongEntry is ReentrancyGuard {
 
     event Paid(address indexed player, bytes32 indexed paymentId, uint256 amount);
     event PriceUpdated(uint256 oldPrice, uint256 newPrice);
+    event PriceProposed(uint256 proposedPrice, uint256 proposedAt);
+    event PauseStateChanged(bool paused);
     event OwnerProposed(address indexed proposed, uint256 proposedAt);
     event OwnerAccepted(address indexed previous, address indexed accepted, uint256 acceptedAt);
     event Swept(
@@ -46,6 +50,8 @@ contract FrongEntry is ReentrancyGuard {
     address public pendingOwner;
     uint256 public ownerProposedAt;
     uint256 public price;
+    uint256 public pendingPrice;
+    uint256 public priceProposedAt;
     bool public paused;
 
     address public treasury;
@@ -84,19 +90,27 @@ contract FrongEntry is ReentrancyGuard {
         gasReserve = gasReserve_;
     }
 
-    /**
-     * Price change (D2): admin-only, bounded, with an old->new audit event.
-     * The admin itself is a 2-step, timelock-compatible owner (Safe-ready).
-     */
+    /** Price changes are bounded and scheduled for a 24h review window. */
     function setPrice(uint256 newPrice) external onlyOwner {
         require(newPrice >= MIN_PRICE && newPrice <= MAX_PRICE, "Entry: price bounds");
+        pendingPrice = newPrice;
+        priceProposedAt = block.timestamp;
+        emit PriceProposed(newPrice, block.timestamp);
+    }
+
+    function acceptPrice() external onlyOwner {
+        require(pendingPrice != 0, "Entry: no pending price");
+        require(block.timestamp >= priceProposedAt + PRICE_TIMELOCK, "Entry: price timelock");
         uint256 oldPrice = price;
-        price = newPrice;
-        emit PriceUpdated(oldPrice, newPrice);
+        price = pendingPrice;
+        delete pendingPrice;
+        priceProposedAt = 0;
+        emit PriceUpdated(oldPrice, price);
     }
 
     function setPaused(bool paused_) external onlyOwner {
         paused = paused_;
+        emit PauseStateChanged(paused_);
     }
 
     /** 2-step owner rotation (24h timelock). The successor claims the role. */

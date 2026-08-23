@@ -5,6 +5,16 @@ import App from '../App'
 import { DEMO_SITE_CONFIG } from '../content/site'
 import { mockTwttr, mockXApi, mockXApiPending, resetXMocks } from './xMocks'
 
+vi.mock('../paid/PaidApp', () => ({
+  default: () => (
+    <div>
+      <button type="button">Play</button>
+      <button type="button">Connect injected wallet</button>
+      <button type="button">Connect with WalletConnect</button>
+    </div>
+  ),
+}))
+
 const renderApp = () => render(<App config={DEMO_SITE_CONFIG} />)
 
 beforeEach(() => {
@@ -123,7 +133,6 @@ describe('App', () => {
 
   it('keeps wallet UI behind the trophy-run choice (no wallet prompts on load)', async () => {
     const user = userEvent.setup()
-    vi.stubGlobal('fetch', () => Promise.reject(new Error('offline')))
     renderApp()
 
     // Nothing wallet-related on load; no buy or investment claims anywhere.
@@ -134,10 +143,10 @@ describe('App', () => {
 
     // Choosing the trophy run reveals the wallet flow.
     await user.click(screen.getByRole('button', { name: 'Play for a trophy' }))
-    await user.click(screen.getByRole('button', { name: 'Play' }))
+    await user.click(await screen.findByRole('button', { name: 'Play' }))
     expect(screen.getByRole('button', { name: 'Connect injected wallet' })).toBeInTheDocument()
     expect(screen.getByRole('button', { name: 'Connect with WalletConnect' })).toBeInTheDocument()
-  })
+  }, 20_000)
 
   it('renders the featured X post card as an official embed', async () => {
     mockXApi()

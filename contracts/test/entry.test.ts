@@ -66,10 +66,18 @@ describe('FrongEntry (FRONG entry payment)', () => {
     const { deployer, player, entry } = await deploy()
     await expectRevert(entry.write.setPrice([PRICE + 1n], { account: player.account }), 'not owner')
     await entry.write.setPrice([PRICE + 1n], { account: deployer.account })
+    expect(await entry.read.price()).to.equal(PRICE)
+    await expectRevert(
+      entry.write.acceptPrice({ account: deployer.account } as never),
+      'price timelock',
+    )
+    await hre.network.provider.send('evm_increaseTime', [TIMELOCK + 1])
+    await hre.network.provider.send('evm_mine')
+    await entry.write.acceptPrice({ account: deployer.account } as never)
     expect(await entry.read.price()).to.equal(PRICE + 1n)
   })
 
-  it('D2: keeps price changes inside bounds and emits an old->new audit trail', async () => {
+  it('D2: keeps price changes inside bounds and emits a scheduled audit trail', async () => {
     const { deployer, entry } = await deploy()
     const min = (await entry.read.MIN_PRICE()) as bigint
     const max = (await entry.read.MAX_PRICE()) as bigint
@@ -82,6 +90,11 @@ describe('FrongEntry (FRONG entry payment)', () => {
       'price bounds',
     )
     await entry.write.setPrice([PRICE + 7n], { account: deployer.account })
+    const proposed = await entry.getEvents.PriceProposed(undefined, { fromBlock: 0n })
+    expect(proposed).to.have.length(1)
+    await hre.network.provider.send('evm_increaseTime', [TIMELOCK + 1])
+    await hre.network.provider.send('evm_mine')
+    await entry.write.acceptPrice({ account: deployer.account } as never)
     const events = await entry.getEvents.PriceUpdated(undefined, { fromBlock: 0n })
     expect(events).to.have.length(1)
     const args = events[0].args as { oldPrice?: bigint; newPrice?: bigint }
@@ -140,6 +153,9 @@ describe('FrongEntry (FRONG entry payment)', () => {
     await entry.write.play([stringToHex('p1', { size: 32 })], { account: player.account })
     const newPrice = PRICE + parseEther('5')
     await entry.write.setPrice([newPrice], { account: deployer.account })
+    await hre.network.provider.send('evm_increaseTime', [TIMELOCK + 1])
+    await hre.network.provider.send('evm_mine')
+    await entry.write.acceptPrice({ account: deployer.account } as never)
     await entry.write.play([stringToHex('p2', { size: 32 })], { account: player.account })
 
     // viem getEvents.Paid(args?, options?): block range is the OPTIONS arg.

@@ -1,4 +1,5 @@
-import type { SiteConfig } from './types/content'
+import { AnalyticsPage } from './analytics/AnalyticsPage'
+import { useAnalyticsRoute, useAnalyticsScrollRestore } from './analytics/useHashRoute'
 import { FeaturedFromX } from './components/FeaturedFromX'
 import { GallerySection } from './components/GallerySection'
 import { HeroSection } from './components/HeroSection'
@@ -7,8 +8,12 @@ import { SiteFooter } from './components/SiteFooter'
 import { SiteHeader } from './components/SiteHeader'
 import { WallOfLove } from './components/WallOfLove'
 import { WhatIsFrongSection } from './components/WhatIsFrongSection'
+import type { SiteConfig } from './types/content'
 
 export default function App({ config }: { config: SiteConfig }) {
+  const analyticsRoute = useAnalyticsRoute()
+  useAnalyticsScrollRestore(analyticsRoute)
+
   return (
     <>
       <a className="skip-link" href="#main">
@@ -21,12 +26,18 @@ export default function App({ config }: { config: SiteConfig }) {
         externalLinks={config.header.externalLinks}
       />
       <main id="main" tabIndex={-1}>
-        <HeroSection hero={config.hero} />
-        <WhatIsFrongSection about={config.about} />
-        <GallerySection gallery={config.gallery} />
-        {config.play ? <PlaySection play={config.play} /> : null}
-        <FeaturedFromX featured={config.featured} />
-        <WallOfLove wall={config.wall} />
+        {analyticsRoute && config.analytics ? (
+          <AnalyticsPage analytics={config.analytics} />
+        ) : (
+          <>
+            <HeroSection hero={config.hero} />
+            <WhatIsFrongSection about={config.about} />
+            <GallerySection gallery={config.gallery} />
+            {config.play ? <PlaySection play={config.play} /> : null}
+            <FeaturedFromX featured={config.featured} />
+            <WallOfLove wall={config.wall} />
+          </>
+        )}
       </main>
       <SiteFooter footer={config.footer} />
     </>

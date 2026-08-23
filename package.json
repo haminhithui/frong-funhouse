@@ -3,6 +3,11 @@
   "private": true,
   "version": "2.0.0",
   "type": "module",
+  "overrides": {
+    "axios": "^1.19.0",
+    "uuid": "^14.0.2",
+    "ws": "^8.21.3"
+  },
   "description": "A small independent fan/community site: Vite + React + TypeScript with live official X embeds and a verified URL-only content model. FRONG demo content included.",
   "license": "MIT",
   "engines": {
@@ -19,6 +24,9 @@
     "typecheck": "tsc -b",
     "test": "vitest run",
     "check:sim-hash": "tsx scripts/check-sim-hash.mjs",
+    "check:bundle": "node scripts/check-bundle-size.mjs",
+    "analytics:backfill": "tsx scripts/frong-analytics.mjs backfill",
+    "analytics:update": "tsx scripts/frong-analytics.mjs update",
     "chain:node": "npm --prefix contracts run node",
     "chain:deploy": "npm --prefix contracts run deploy:local",
     "contracts:test": "npm --prefix contracts run test",
@@ -30,7 +38,6 @@
   "dependencies": {
     "@privy-io/react-auth": "^3.37.3",
     "@walletconnect/ethereum-provider": "^2.23.10",
-    "@walletconnect/modal": "^2.7.0",
     "react": "^19.1.0",
     "react-dom": "^19.1.0",
     "viem": "^2.55.18"

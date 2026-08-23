@@ -16,26 +16,24 @@ function playFullLog(seed: number, countdownTicks: number, durationTicks: number
 }
 
 /**
- * Human-like log: follows the active fly with deterministic jitter, drops the
- * pointer now and then, and occasionally steers with the keyboard. Never
- * matches the greedy solver trajectory exactly.
+ * Normal pointer/keyboard log: the pointer is moved in coarse human-scale
+ * gestures and held between movements. It is deliberately independent of the
+ * active fly positions so it cannot accidentally encode the solver trajectory.
  */
-function playHumanLog(seed: number, countdownTicks: number, durationTicks: number): InputFrame[] {
+function playNormalLog(seed: number, countdownTicks: number, durationTicks: number): InputFrame[] {
   const state = createGame(seed, { countdownTicks, durationTicks })
   const inputs: InputFrame[] = []
-  let jitterState = 1
   while (state.phase !== 'finished') {
-    jitterState = (jitterState * 1103515245 + 12345) % 2147483648
-    const jitter = ((jitterState % 17) - 8) * 0.6
-    const solver = autoInput(state)
     const tick = state.tick
     let input: InputFrame
-    if (tick > 0 && tick % 40 === 0) {
-      input = { targetX: null, axis: tick % 80 === 0 ? -1 : 1 }
-    } else if (tick > 0 && tick % 97 === 0) {
-      input = { targetX: null, axis: 0 }
+    if (tick > 0 && tick % 53 === 0) {
+      input = { targetX: null, axis: 1 }
+    } else if (tick > 0 && tick % 89 === 0) {
+      input = { targetX: null, axis: -1 }
     } else {
-      input = { targetX: solver.targetX !== null ? solver.targetX + jitter : 240, axis: 0 }
+      const gesture = Math.floor(Math.max(tick, 0) / 11)
+      const targetX = 72 + ((gesture * 137 + seed) % 336)
+      input = { targetX, axis: 0 }
     }
     inputs.push(input)
     stepGame(state, input)
@@ -139,14 +137,43 @@ describe('replay verification', () => {
     expect(result).toEqual({ ok: false, reason: 'input matches automated solver signature' })
   })
 
-  it('accepts a human-like noisy log at production-like length', () => {
+  it('accepts normal pointer and keyboard play at production-like length', () => {
     const longConfig = testConfig({ countdownTicks: 1, durationTicks: 200 })
     const seed = 4242
-    const log = playHumanLog(seed, longConfig.countdownTicks, longConfig.durationTicks)
+    const log = playNormalLog(seed, longConfig.countdownTicks, longConfig.durationTicks)
     const hash = hashInputLog(log)
     const result = verifyRun(longConfig, seed, log, hash)
     expect(result.ok).toBe(true)
     if (result.ok) expect(result.state.score).toBeLessThanOrEqual(109)
+  })
+
+  it('rejects a greedy solver with small deterministic jitter', () => {
+    const longConfig = testConfig({ countdownTicks: 1, durationTicks: 200 })
+    const seed = 4242
+    const state = createGame(seed, {
+      countdownTicks: longConfig.countdownTicks,
+      durationTicks: longConfig.durationTicks,
+    })
+    const log: InputFrame[] = []
+    let jitterState = 1
+    while (state.phase !== 'finished') {
+      jitterState = (jitterState * 1103515245 + 12345) % 2147483648
+      const jitter = ((jitterState % 17) - 8) * 0.6
+      const solver = autoInput(state)
+      const tick = state.tick
+      const input =
+        tick > 0 && tick % 40 === 0
+          ? { targetX: null, axis: (tick % 80 === 0 ? -1 : 1) as -1 | 1 }
+          : { targetX: (solver.targetX ?? 240) + jitter, axis: 0 as const }
+      log.push(input)
+      stepGame(state, log[log.length - 1])
+    }
+
+    const result = verifyRun(longConfig, seed, log, hashInputLog(log))
+    expect(result).toEqual({
+      ok: false,
+      reason: 'input matches automated solver with low-jitter pointer cadence',
+    })
   })
 
   it('accepts a constant idle log (entropy floor intentionally not enforced)', () => {

@@ -19,3 +19,5 @@ contracts/deployments/*.dry-run.json
 vitest-log.txt
 *.log
 smoke/
+.tmp-chrome-profile*
+.smoke*

@@ -4,12 +4,17 @@ export interface Session {
   sessionId: string
   player: string
   paymentTxHash: string
+  /** Present for sessions issued through payment recovery; optional for legacy callers. */
+  paymentId?: string
   seed: number
   buildHash: string
   createdAt: number
   expiresAt: number
   consumed: boolean
 }
+
+/** Session material is durably bound to a payment by Store; the map is a hot cache. */
+export const SESSION_PERSISTENCE_SCOPE = 'durable-payment-binding' as const
 
 const sessions = new Map<string, Session>()
 
@@ -26,17 +31,51 @@ export function issueSession(
   paymentTxHash: string,
   buildHash: string,
   ttlMs: number,
+  options: { paymentId?: string } = {},
 ): Session {
   prune()
+  const now = Date.now()
   const session: Session = {
     sessionId: randomBytes(16).toString('hex'),
     player: player.toLowerCase(),
     paymentTxHash: paymentTxHash.toLowerCase(),
+    ...(options.paymentId ? { paymentId: options.paymentId.toLowerCase() } : {}),
     seed: randomBytes(4).readUInt32BE(0) >>> 0,
     buildHash,
-    createdAt: Date.now(),
-    expiresAt: Date.now() + ttlMs,
+    createdAt: now,
+    expiresAt: now + ttlMs,
     consumed: false,
+  }
+  sessions.set(session.sessionId, session)
+  return session
+}
+
+/**
+ * Rehydrates a session from a durable payment binding after a restart. The
+ * original expiry is honored; this never extends a paid run's lifetime.
+ */
+export function restoreSession(
+  recovered: Omit<Session, 'consumed'> & { consumed?: boolean },
+): Session | undefined {
+  prune()
+  if (recovered.expiresAt <= Date.now()) return undefined
+  const existing = sessions.get(recovered.sessionId)
+  if (existing) {
+    if (
+      existing.player !== recovered.player.toLowerCase() ||
+      existing.paymentTxHash !== recovered.paymentTxHash.toLowerCase() ||
+      existing.buildHash !== recovered.buildHash
+    ) {
+      return undefined
+    }
+    return existing
+  }
+  const session: Session = {
+    ...recovered,
+    player: recovered.player.toLowerCase(),
+    paymentTxHash: recovered.paymentTxHash.toLowerCase(),
+    ...(recovered.paymentId ? { paymentId: recovered.paymentId.toLowerCase() } : {}),
+    consumed: recovered.consumed ?? false,
   }
   sessions.set(session.sessionId, session)
   return session

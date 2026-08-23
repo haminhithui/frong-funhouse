@@ -12,7 +12,7 @@ import { Store } from '../src/store'
 import { MintWorker } from '../src/mintQueue'
 import { hashInputLog } from '../src/verify'
 import type { ServerConfig } from '../src/config'
-import { createGame, stepGame, autoInput } from '../../../src/game/sim/sim'
+import { createGame, stepGame } from '../../../src/game/sim/sim'
 import type { InputFrame } from '../../../src/game/sim/types'
 
 const DEPLOYMENT_FILE = join(
@@ -110,8 +110,29 @@ async function setup() {
     kmsRegion: null,
     kmsKeyId: null,
     kmsMinerAddress: null,
+    operatorToken: null,
   }
   const store = new Store(dataDir)
+  // The application store is fresh per test, while a manually reused local
+  // chain may already contain token ids from an earlier E2E run. Reserve the
+  // contiguous on-chain ids so this harness still exercises a real mint tx.
+  let firstAvailableTokenId = 1
+  while (firstAvailableTokenId < 1_000) {
+    try {
+      await publicClient.readContract({
+        address: deployment.trophy as Hex,
+        abi: TROPHY_ABI,
+        functionName: 'ownerOf',
+        args: [BigInt(firstAvailableTokenId)],
+      })
+      firstAvailableTokenId += 1
+    } catch {
+      break
+    }
+  }
+  for (let tokenId = 1; tokenId < firstAvailableTokenId; tokenId += 1) {
+    store.nextTokenIdValue()
+  }
   const buildHash = computeSimBuildHash()
   const server = createApp({ config, store, buildHash })
   const worker = new MintWorker(config, store)
@@ -177,6 +198,12 @@ describe('end-to-end on a local EVM', () => {
     const FRONG_ALLOWANCE_ABI = parseAbi([
       'function allowance(address owner, address spender) view returns (uint256)',
     ])
+    const entryBalanceBefore = await publicClient.readContract({
+      address: config.frong as Hex,
+      abi: FRONG_ABI,
+      functionName: 'balanceOf',
+      args: [config.entry as Hex],
+    })
     let balance = await publicClient.readContract({
       address: config.frong as Hex,
       abi: FRONG_ABI,
@@ -184,6 +211,11 @@ describe('end-to-end on a local EVM', () => {
       args: [player.address as Hex],
     })
     if (balance < config.feeAmount) {
+      // The local chain may be intentionally reused between integration runs.
+      // MockFRONG has a one-day faucet cooldown, so advance only this local
+      // Hardhat clock before requesting a fresh deterministic test balance.
+      await publicClient.request({ method: 'evm_increaseTime', params: [86_401] } as never)
+      await publicClient.request({ method: 'evm_mine', params: [] } as never)
       const hash = await playerWallet.writeContract({
         address: config.frong as Hex,
         abi: FRONG_ABI,
@@ -250,25 +282,22 @@ describe('end-to-end on a local EVM', () => {
       durationTicks: number
     }
 
-    // 4. Honest run: HUMAN-LIKE input log (jittered pointer + keyboard moments).
-    // A pure greedy-bot log is correctly rejected by the solver-signature
-    // check, so the integration run plays like a person.
+    // 4. Honest run: coarse pointer gestures with occasional keyboard input.
+    // The log is independent of fly positions so it does not encode the
+    // deterministic solver trajectory rejected by the verifier.
     const state = createGame(seed, { countdownTicks, durationTicks })
     const log: InputFrame[] = []
-    let jitterState = 1
     while (state.phase !== 'finished') {
-      jitterState = (jitterState * 1103515245 + 12345) % 2147483648
-      const jitter = ((jitterState % 17) - 8) * 0.6
-      const solver = autoInput(state)
       const tick = state.tick
-      let input: InputFrame
-      if (tick > 0 && tick % 40 === 0) {
-        input = { targetX: null, axis: tick % 80 === 0 ? -1 : 1 }
-      } else if (tick > 0 && tick % 97 === 0) {
-        input = { targetX: null, axis: 0 }
-      } else {
-        input = { targetX: solver.targetX !== null ? solver.targetX + jitter : 240, axis: 0 }
-      }
+      const input: InputFrame =
+        tick > 0 && tick % 53 === 0
+          ? { targetX: null, axis: 1 }
+          : tick > 0 && tick % 89 === 0
+            ? { targetX: null, axis: -1 }
+            : {
+                targetX: 72 + ((Math.floor(Math.max(tick, 0) / 11) * 137 + seed) % 336),
+                axis: 0,
+              }
       log.push(input)
       stepGame(state, input)
     }
@@ -286,7 +315,11 @@ describe('end-to-end on a local EVM', () => {
     // 5. Mint worker: wait for the real mint transaction.
     let minted = false
     for (let i = 0; i < 30; i += 1) {
-      const status = (await (await fetch(base + '/api/status/' + tokenId)).json()) as {
+      const status = (await (
+        await fetch(base + '/api/status/' + tokenId, {
+          headers: { Authorization: 'Bearer ' + authToken },
+        })
+      ).json()) as {
         record: { status: string; txHash: string | null }
       }
       if (status.record.status === 'minted') {
@@ -322,11 +355,13 @@ describe('end-to-end on a local EVM', () => {
       functionName: 'balanceOf',
       args: [config.entry as Hex],
     })
-    expect(entryBalance).toBe(config.feeAmount)
+    expect(entryBalance).toBe(entryBalanceBefore + config.feeAmount)
 
-    // 7. The same payment can never fund a second session.
+    // 7. Retrying the same payment recovers the original session rather than
+    // charging/funding a second run.
     const again = await api('/api/session', { paymentTxHash: hash, paymentId }, authToken)
-    expect(again.status).toBe(402)
-    expect(again.body.reason).toBe('payment already used')
+    expect(again.status).toBe(200)
+    expect(again.body.sessionId).toBe(sessionId)
+    expect(again.body.seed).toBe(seed)
   }, 90_000)
 })

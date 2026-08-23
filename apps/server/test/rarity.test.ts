@@ -30,6 +30,6 @@ describe('backend-decided rarity (skill-gated, no randomness)', () => {
     expect(json.attributes.find((a) => a.trait_type === 'Score')?.value).toBe(85)
     expect(json.attributes.find((a) => a.trait_type === 'Tier')?.value).toBe('Just FRONG.')
     expect(uri).toBe(config.metadataBaseUrl + '/metadata/7.json')
-    expect(json.image).toBe(config.metadataBaseUrl + '/assets/tiers/just-frong.png')
+    expect(json.image).toBe(config.metadataBaseUrl + '/assets/tiers/just-frong.svg')
   })
 })

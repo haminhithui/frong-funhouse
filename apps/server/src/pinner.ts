@@ -1,5 +1,6 @@
 import { PinataSDK, type PinataConfig } from 'pinata'
-import type { ServerConfig } from './config'
+import { existsSync, readFileSync } from 'node:fs'
+import { isProductionLike, type ServerConfig } from './config'
 import { writeMetadataFile } from './store'
 
 export interface PinnedMetadata {
@@ -15,6 +16,11 @@ export interface PinnedMetadata {
  */
 export interface MetadataPinner {
   pinMetadata(tokenId: number, metadata: unknown): Promise<PinnedMetadata>
+  /**
+   * Optional restart-recovery probe. A false result means the persisted URI
+   * is not trusted for this pinner and metadata must be pinned again.
+   */
+  isPinned?(tokenId: number, uri: string, metadata: unknown): Promise<boolean>
 }
 
 /** Keys that must never appear in pinned metadata (least-privilege hygiene). */
@@ -84,6 +90,14 @@ export class PinataPinner implements MetadataPinner {
     const cid = String(upload.cid)
     return { uri: 'ipfs://' + cid, cid }
   }
+
+  async isPinned(_tokenId: number, uri: string, _metadata: unknown): Promise<boolean> {
+    // An IPFS CID is immutable and is the only URI shape this pinner emits.
+    // Availability is checked by the gateway/marketplace, not by mint retry.
+    void _tokenId
+    void _metadata
+    return uri.startsWith('ipfs://') && uri.length > 'ipfs://'.length
+  }
 }
 
 /**
@@ -92,17 +106,37 @@ export class PinataPinner implements MetadataPinner {
  * closed there instead).
  */
 export class LocalFilePinner implements MetadataPinner {
+  private readonly normalizedBaseUrl: string
+
   constructor(
     private readonly dataDir: string,
-    private readonly baseUrl: string,
-  ) {}
+    baseUrl: string,
+  ) {
+    this.normalizedBaseUrl = baseUrl.replace(/\/+$/, '')
+    if (!this.normalizedBaseUrl) throw new Error('METADATA_BASE_URL is required for local pinning')
+  }
 
   async pinMetadata(tokenId: number, metadata: unknown): Promise<PinnedMetadata> {
     validateMetadata(metadata)
     writeMetadataFile(this.dataDir, tokenId, metadata)
     return {
-      uri: this.baseUrl.replace(/\/$/, '') + '/metadata/' + tokenId + '.json',
+      uri: this.normalizedBaseUrl + '/metadata/' + tokenId + '.json',
       cid: 'local:' + tokenId,
+    }
+  }
+
+  async isPinned(tokenId: number, uri: string, metadata: unknown): Promise<boolean> {
+    const expectedUri = this.normalizedBaseUrl + '/metadata/' + tokenId + '.json'
+    if (uri !== expectedUri) return false
+    const file = this.dataDir + '/metadata/' + tokenId + '.json'
+    if (!existsSync(file)) return false
+    try {
+      validateMetadata(metadata)
+      const stored = JSON.parse(readFileSync(file, 'utf8')) as unknown
+      validateMetadata(stored)
+      return JSON.stringify(stored) === JSON.stringify(metadata)
+    } catch {
+      return false
     }
   }
 }
@@ -114,16 +148,23 @@ export class FailingPinner implements MetadataPinner {
     void _metadata
     throw new Error('metadata pinning is not configured (PINATA_JWT missing) - minting disabled')
   }
+
+  async isPinned(_tokenId: number, _uri: string, _metadata: unknown): Promise<boolean> {
+    void _tokenId
+    void _uri
+    void _metadata
+    return false
+  }
 }
 
 /**
- * Pinner factory: PINATA_JWT -> Pinata. Production without it -> failing
- * (no mint can proceed). Dev/test without it -> local file pinner.
+ * Pinner factory: PINATA_JWT -> Pinata. Production-like config without it ->
+ * failing (no mint can proceed). Dev/test without it -> local file pinner.
  */
 export function createPinner(config: ServerConfig): MetadataPinner {
   if (config.pinataJwt) {
     return new PinataPinner(config.pinataJwt, config.pinataGateway)
   }
-  if (process.env.NODE_ENV === 'production') return new FailingPinner()
+  if (isProductionLike(config)) return new FailingPinner()
   return new LocalFilePinner(config.dataDir, config.metadataBaseUrl)
 }

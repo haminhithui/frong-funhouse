@@ -82,6 +82,14 @@ export interface PlayConfig {
   paidCta: string
 }
 
+/** Read-only fee/liquidity analytics section copy. */
+export interface AnalyticsConfig {
+  eyebrow: string
+  title: string
+  lede: string
+  note: string
+}
+
 export interface FooterConfig {
   tagline: string
   copyright: string
@@ -100,5 +108,7 @@ export interface SiteConfig {
   wall: WallConfig
   /** Optional in-page practice arcade; omit to ship a read-only fan page. */
   play?: PlayConfig
+  /** Optional read-only fee/liquidity analytics section. */
+  analytics?: AnalyticsConfig
   footer: FooterConfig
 }

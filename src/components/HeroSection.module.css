@@ -41,45 +41,6 @@
   gap: 14px;
 }
 
-.primary {
-  display: inline-flex;
-  align-items: center;
-  padding: 13px 24px;
-  background: var(--accent);
-  color: var(--accent-ink);
-  border: 1px solid transparent;
-  border-radius: var(--radius-sm);
-  font-weight: 600;
-  font-size: 0.95rem;
-  transition:
-    transform var(--speed-fast) var(--ease),
-    background var(--speed-fast) var(--ease);
-}
-
-.primary:hover {
-  background: var(--accent-bright);
-  transform: translateY(-1px);
-}
-
-.ghost {
-  display: inline-flex;
-  align-items: center;
-  padding: 13px 24px;
-  border: 1px solid var(--line-strong);
-  border-radius: var(--radius-sm);
-  color: var(--ink);
-  font-weight: 600;
-  font-size: 0.95rem;
-  transition:
-    border-color var(--speed-fast) var(--ease),
-    background var(--speed-fast) var(--ease);
-}
-
-.ghost:hover {
-  border-color: var(--accent);
-  background: var(--accent-soft);
-}
-
 .plumbingWarning {
   margin-top: 16px;
   font-size: 0.75rem;

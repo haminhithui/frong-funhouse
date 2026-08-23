@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
-import { fetchOEmbed, loadXWidgetScript } from '../lib/xPosts'
+import { fetchOEmbed, loadXWidgetScript, sanitizeOEmbedHtml } from '../lib/xPosts'
 import type { XPostRef } from '../types/content'
 import styles from './XEmbedCard.module.css'
 
@@ -24,7 +24,7 @@ function XEmbed({ html, onDegraded, attempt }: XEmbedProps) {
 
     const render = () => {
       if (cancelled) return
-      el.innerHTML = html
+      el.replaceChildren(sanitizeOEmbedHtml(html))
       const blockquote = el.querySelector<HTMLElement>('blockquote.twitter-tweet')
       blockquote?.setAttribute('data-theme', 'dark')
       loadXWidgetScript()
@@ -63,7 +63,7 @@ function XEmbed({ html, onDegraded, attempt }: XEmbedProps) {
       cancelled = true
       window.clearTimeout(resizeTimer)
       window.removeEventListener('resize', onResize)
-      el.innerHTML = ''
+      el.replaceChildren()
     }
   }, [html, onDegraded, attempt])
 

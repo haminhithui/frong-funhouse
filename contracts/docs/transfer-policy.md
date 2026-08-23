@@ -93,7 +93,7 @@ Source:
 - <https://docs.openzeppelin.com/contracts/5.x/api/token/erc721#ERC721-_update-address-address-uint256-address->
 - EIP-2981/ERC-721 discussion: <https://eips.ethereum.org/EIPS/eip-2981>
 
-### 2.3 Soulbound / no-transfer — RECOMMENDED
+### 2.3 Soulbound / no-transfer — NOT SELECTED
 
 A soulbound token blocks ordinary transfers so the trophy stays bound to the
 verified wallet that earned it. The standard form is EIP-5192 ("Minimal
@@ -165,9 +165,9 @@ Sources:
 
 ---
 
-## 3. Recommendation (exact)
+## 3. Selected policy (exact)
 
-**Soulbound / no-transfer — deploy `FrongTrophy` with `soulbound = true`.**
+**Standard transferable ERC-721 — deploy `FrongTrophy` with `soulbound = false`.**
 
 Rationale against the FRONG Catch facts:
 
@@ -177,8 +177,8 @@ Rationale against the FRONG Catch facts:
   that fits, but it taxes self-custody with no revenue purpose.
 - **Gas sponsored, mint-to-player** ⇒ the trophy should be a frictionless
   proof-of-play; a transfer fee or time-lock is pure friction.
-- **Only reward = trophy** ⇒ binding it to the verified wallet is the honest
-  representation of "you earned this run".
+- **Only reward = trophy** ⇒ the player may move the earned proof to a
+  self-custody or recovery wallet without a protocol-imposed lock.
 
 Implementation sketch (already present as the `soulbound` flag; the only change
 is the deploy-time value):
@@ -204,17 +204,17 @@ Gas/UX implications:
   change is that `transferFrom` reverts. Document the soulbound status in the
   UI copy and in `ownership.md`.
 
-One-way-door note: choosing soulbound on a non-upgradeable contract is
-permanent for that deployment. Confirm the owner accepts that before
-`deploy:testnet`.
+The constructor flag remains explicit so a future deployment can make a
+different owner-approved choice, but the current testnet deployment path and
+the D1 test deliberately pin the transferable policy.
 
 ---
 
 ## 4. Decision log
 
-| #   | Question                    | Recommendation                 | Status                                           |
-| --- | --------------------------- | ------------------------------ | ------------------------------------------------ |
-| 1   | Transferable vs soulbound   | Soulbound (`soulbound = true`) | PENDING OWNER — do not implement until confirmed |
-| 2   | On-chain FRONG transfer fee | Not needed (no marketplace)    | Ruled out this phase                             |
-| 3   | EIP-2981 royalties          | Not needed                     | Ruled out                                        |
-| 4   | Operator-filter registry    | Not needed (deprecated)        | Ruled out                                        |
+| #   | Question                    | Recommendation                     | Status                       |
+| --- | --------------------------- | ---------------------------------- | ---------------------------- |
+| 1   | Transferable vs soulbound   | Transferable (`soulbound = false`) | Implemented and pinned by D1 |
+| 2   | On-chain FRONG transfer fee | Not needed (no marketplace)        | Ruled out this phase         |
+| 3   | EIP-2981 royalties          | Not needed                         | Ruled out                    |
+| 4   | Operator-filter registry    | Not needed (deprecated)            | Ruled out                    |

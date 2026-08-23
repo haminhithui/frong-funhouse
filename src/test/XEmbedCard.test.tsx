@@ -116,11 +116,16 @@ describe('XEmbedCard', () => {
       expect(screen.getByRole('link', { name: /View on X/ })).toHaveAttribute('href', POST.url)
       // The official blockquote fallback stays in place alongside the link.
       expect(document.querySelector('blockquote.twitter-tweet')).not.toBeNull()
+      const firstScript = document.querySelector('script[src="https://platform.x.com/widgets.js"]')
+      expect(firstScript).toBeNull()
 
       // Retrying re-runs the widget load; with the script still missing it
       // settles back into the same degraded state without losing content.
       fireEvent.click(screen.getByRole('button', { name: 'Retry embed' }))
       expect(screen.queryByRole('link', { name: /View on X/ })).not.toBeInTheDocument()
+      expect(
+        document.querySelector('script[src="https://platform.x.com/widgets.js"]'),
+      ).not.toBeNull()
       await act(async () => {
         vi.advanceTimersByTime(11_000)
       })

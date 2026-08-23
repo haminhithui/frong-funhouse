@@ -1,0 +1,646 @@
+/* Shared FRONG Catch arcade UI — one visual language for practice (GameApp)
+   and the paid trophy run (PaidApp). Screen-specific layout lives in the
+   consuming modules; everything reusable lives here. */
+
+.shell {
+  position: relative;
+  width: 100%;
+  max-width: 560px;
+  margin-inline: auto;
+  background:
+    radial-gradient(120% 90% at 50% 0%, rgba(156, 219, 98, 0.07), transparent 55%), var(--bg-raised);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+  box-shadow:
+    var(--shadow-soft),
+    0 0 90px -40px rgba(156, 219, 98, 0.45);
+}
+
+/* Top status strip */
+.strip {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 10px 16px;
+  border-bottom: 1px solid var(--line);
+  background: rgba(0, 0, 0, 0.22);
+  font-family: var(--font-mono);
+  font-size: 0.6875rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--ink-faint);
+}
+
+.badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 3px 10px;
+  border: 1px solid var(--accent-line);
+  border-radius: var(--radius-pill);
+  background: var(--accent-soft);
+  color: var(--accent-bright);
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  white-space: nowrap;
+}
+
+.badge::before {
+  content: '';
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--accent);
+}
+
+.stripMeta {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* Screens */
+.attract,
+.results,
+.center {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+  padding: clamp(20px, 4vw, 32px);
+  outline: none;
+}
+
+.attract {
+  align-items: stretch;
+}
+
+.results,
+.center {
+  align-items: center;
+  text-align: center;
+}
+
+.run {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 16px;
+  outline: none;
+}
+
+/* Screen entry — one quiet transition, not constant motion. */
+.screenIn {
+  animation: screenIn var(--speed-base) var(--ease);
+}
+
+@keyframes screenIn {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+/* Type */
+.title {
+  font-size: clamp(2rem, 7vw, 2.6rem);
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  line-height: 1.05;
+}
+
+.accent {
+  color: var(--accent);
+}
+
+.lede {
+  color: var(--ink-muted);
+  max-width: 48ch;
+}
+
+.help {
+  color: var(--ink-faint);
+  font-size: 0.8125rem;
+}
+
+.help strong {
+  color: var(--accent-bright);
+}
+
+.best {
+  color: var(--ink-muted);
+  font-size: 0.9375rem;
+}
+
+.best strong {
+  color: var(--accent-bright);
+  font-family: var(--font-mono);
+}
+
+/* Fly legend */
+.legend {
+  list-style: none;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(96px, 1fr));
+  gap: 8px;
+}
+
+.legendItem {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 3px;
+  padding: 12px 8px 10px;
+  background: rgba(0, 0, 0, 0.18);
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  text-align: center;
+  transition:
+    border-color var(--speed-fast) var(--ease),
+    background var(--speed-fast) var(--ease),
+    transform var(--speed-fast) var(--ease);
+}
+
+.legendItem:hover {
+  border-color: var(--line-strong);
+  background: rgba(0, 0, 0, 0.28);
+  transform: translateY(-1px);
+}
+
+.legendName {
+  font-size: 0.8125rem;
+  font-weight: 600;
+  color: var(--ink);
+}
+
+.legendPoints {
+  font-family: var(--font-mono);
+  font-size: 0.8125rem;
+  font-weight: 700;
+  color: var(--accent-bright);
+}
+
+.legendNote {
+  font-size: 0.6875rem;
+  line-height: 1.35;
+  color: var(--ink-faint);
+}
+
+/* Score tiers */
+.tiers {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 6px 18px;
+  list-style: none;
+}
+
+.tierItem {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 8px;
+  padding-bottom: 6px;
+  border-bottom: 1px solid var(--line);
+  font-size: 0.875rem;
+}
+
+.tierItemBest .tierName {
+  color: var(--accent-bright);
+}
+
+.tierItemBest .tierName::after {
+  content: '';
+  display: inline-block;
+  width: 6px;
+  height: 6px;
+  margin-left: 8px;
+  border-radius: 50%;
+  background: var(--accent);
+  vertical-align: middle;
+}
+
+.tierName {
+  color: var(--ink);
+}
+
+.tierMin {
+  color: var(--ink-faint);
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+}
+
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  margin-top: 4px;
+}
+
+/* HUD */
+.hud {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px 14px;
+  padding: 8px 10px 8px 14px;
+  background: rgba(0, 0, 0, 0.25);
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  font-family: var(--font-mono);
+  font-size: 0.8125rem;
+  color: var(--ink-muted);
+}
+
+.hudStats {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 8px 16px;
+}
+
+.hudStat {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 6px;
+  white-space: nowrap;
+}
+
+.hudStrong {
+  display: inline-block;
+  color: var(--ink);
+  font-weight: 700;
+  font-size: 0.9375rem;
+}
+
+/* Event-driven pops: remount on value change, settle back to rest. */
+.hudStrongPop {
+  animation: scorePop 260ms var(--ease-spring);
+}
+
+@keyframes scorePop {
+  0% {
+    transform: scale(1.45);
+    color: var(--accent-bright);
+  }
+
+  100% {
+    transform: scale(1);
+  }
+}
+
+.hudStatWarn .hudStrong {
+  color: var(--warning);
+}
+
+.hudStatDanger .hudStrong {
+  color: var(--danger);
+  animation: timePulse 1s var(--ease) infinite;
+}
+
+@keyframes timePulse {
+  0%,
+  100% {
+    opacity: 1;
+  }
+
+  50% {
+    opacity: 0.55;
+  }
+}
+
+.hudPause {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: var(--touch-target);
+  height: var(--touch-target);
+  margin: -6px -6px -6px 0;
+  border: 1px solid var(--line-strong);
+  border-radius: 10px;
+  background: rgba(236, 231, 220, 0.03);
+  color: var(--ink-muted);
+  transition:
+    border-color var(--speed-fast) var(--ease),
+    color var(--speed-fast) var(--ease),
+    transform var(--speed-fast) var(--ease);
+}
+
+.hudPause:hover {
+  border-color: var(--accent);
+  color: var(--accent-bright);
+}
+
+/* Programmatic focus (dialog open) must still show a ring — :focus-visible
+   alone is not enough for programmatically focused controls. */
+.pauseCard button:focus {
+  outline: var(--focus-ring-width) solid var(--focus-ring);
+  outline-offset: 3px;
+  border-radius: 2px;
+}
+
+.hudPause:active {
+  transform: scale(0.94);
+}
+
+/* Tier progress */
+.progress {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.progressTrack {
+  height: 6px;
+  border-radius: var(--radius-pill);
+  background: rgba(236, 231, 220, 0.08);
+  overflow: hidden;
+}
+
+.progressFill {
+  height: 100%;
+  border-radius: var(--radius-pill);
+  background: linear-gradient(90deg, var(--accent), var(--accent-bright));
+  transition: width var(--speed-base) var(--ease);
+}
+
+.progressMeta {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  font-family: var(--font-mono);
+  font-size: 0.6875rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.progressTier {
+  display: inline-block;
+  color: var(--accent-bright);
+}
+
+.progressTierPop {
+  animation: tierPop 320ms var(--ease-spring);
+}
+
+@keyframes tierPop {
+  0% {
+    transform: scale(1.3);
+  }
+
+  100% {
+    transform: scale(1);
+  }
+}
+
+.progressNext {
+  color: var(--ink-faint);
+}
+
+/* Stage */
+.stageWrap {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 480 / 640;
+  background: var(--moss-2);
+  border: 1px solid var(--line-strong);
+  border-radius: var(--radius-md);
+  overflow: hidden;
+  touch-action: none;
+  box-shadow: inset 0 0 60px -20px rgba(0, 0, 0, 0.8);
+}
+
+.stageInner {
+  width: 100%;
+  height: 100%;
+}
+
+.stageInner canvas {
+  width: 100%;
+  height: 100%;
+  display: block;
+}
+
+/* Overlays — scrim over the stage, never over the whole page. */
+.overlay {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  padding: 24px;
+  background: rgba(11, 13, 12, 0.78);
+  backdrop-filter: blur(3px);
+  text-align: center;
+}
+
+.getReady {
+  font-family: var(--font-mono);
+  font-size: 0.8125rem;
+  letter-spacing: 0.24em;
+  text-transform: uppercase;
+  color: var(--ink-muted);
+}
+
+.countdown {
+  font-size: clamp(4rem, 16vw, 5.5rem);
+  font-weight: 700;
+  line-height: 1;
+  color: var(--accent-bright);
+  text-shadow: 0 0 42px rgba(185, 239, 131, 0.55);
+  animation: countPop 600ms var(--ease-spring);
+}
+
+@keyframes countPop {
+  0% {
+    transform: scale(1.35);
+    opacity: 0;
+  }
+
+  60% {
+    transform: scale(0.95);
+    opacity: 1;
+  }
+
+  100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
+/* Pause dialog — compact card so the playfield stays visible around it. */
+.pauseCard {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  max-width: min(320px, 86%);
+  padding: 20px 24px;
+  background: var(--bg-raised);
+  border: 1px solid var(--line-strong);
+  border-radius: var(--radius-md);
+  box-shadow:
+    var(--shadow-soft),
+    0 24px 60px -24px rgba(0, 0, 0, 0.8);
+}
+
+.pauseTitle {
+  font-size: 1.5rem;
+  font-weight: 700;
+}
+
+.pauseHint {
+  font-family: var(--font-mono);
+  font-size: 0.6875rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--ink-faint);
+}
+
+/* Results */
+.resultTier {
+  font-size: clamp(1.9rem, 6vw, 2.5rem);
+  font-weight: 700;
+  letter-spacing: -0.01em;
+  color: var(--accent-bright);
+  text-shadow: 0 0 34px rgba(185, 239, 131, 0.35);
+  outline: none;
+}
+
+.newBest {
+  display: inline-flex;
+  align-items: center;
+  padding: 4px 12px;
+  border: 1px solid var(--accent-line);
+  border-radius: var(--radius-pill);
+  background: var(--accent-soft);
+  color: var(--accent-bright);
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.flavor {
+  color: var(--ink-muted);
+  font-size: 0.9375rem;
+}
+
+.stats {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 24px;
+}
+
+.stat dt {
+  font-size: 0.6875rem;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--ink-faint);
+}
+
+.statValue {
+  font-family: var(--font-mono);
+  font-size: 1.6rem;
+  font-weight: 700;
+  color: var(--ink);
+}
+
+.statUnit {
+  font-size: 0.95rem;
+  color: var(--ink-faint);
+  font-weight: 400;
+}
+
+/* State boxes — error / warning / info, each with a vector glyph. */
+.errorBox,
+.warningBox,
+.infoBox {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 10px 14px;
+  border: 1px solid;
+  border-radius: 10px;
+  font-size: 0.875rem;
+  line-height: 1.5;
+  text-align: left;
+}
+
+.errorBox svg,
+.warningBox svg,
+.infoBox svg {
+  flex-shrink: 0;
+  margin-top: 3px;
+}
+
+.errorBox {
+  border-color: var(--danger-line);
+  background: var(--danger-soft);
+  color: var(--danger);
+}
+
+.warningBox {
+  border-color: var(--warning-line);
+  background: var(--warning-soft);
+  color: var(--warning);
+}
+
+.infoBox {
+  border-color: var(--info-line);
+  background: var(--info-soft);
+  color: var(--info);
+}
+
+/* Loading */
+.spinner {
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  border: 2px solid rgba(236, 231, 220, 0.15);
+  border-top-color: var(--accent-bright);
+  animation: spin 0.8s linear infinite;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.spinnerRow {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+}
+
+/* Small screens */
+@media (max-width: 420px) {
+  .stripMeta {
+    display: none;
+  }
+
+  .tiers {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* Short viewports (landscape phones): trim secondary HUD chrome so the
+   playfield keeps most of the screen. */
+@media (max-height: 520px) {
+  .progressMeta {
+    display: none;
+  }
+}

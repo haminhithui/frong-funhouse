@@ -14,7 +14,7 @@ function validMetadata() {
   return {
     name: 'FRONG Catch Trophy #1 — Tadpole',
     description: 'Replay-verified run: 20/109 points.',
-    image: 'https://gateway.example/assets/tiers/tadpole.png',
+    image: 'https://gateway.example/assets/tiers/tadpole.svg',
     attributes: [{ trait_type: 'Tier', value: 'Tadpole' }],
   }
 }
@@ -47,6 +47,8 @@ describe('metadata pinner', () => {
     expect(pinned.uri).toBe(config.metadataBaseUrl + '/metadata/3.json')
     const file = join(config.dataDir, 'metadata', '3.json')
     expect(JSON.parse(readFileSync(file, 'utf8')).name).toContain('Trophy')
+    expect(await pinner.isPinned?.(3, pinned.uri, validMetadata())).toBe(true)
+    expect(await pinner.isPinned?.(4, pinned.uri, validMetadata())).toBe(false)
   })
 
   it('PinataPinner pins JSON through the official SDK and returns ipfs:// URIs', async () => {
@@ -79,5 +81,17 @@ describe('metadata pinner', () => {
       process.env.NODE_ENV = previous
     }
     expect(createPinner(testConfig())).toBeInstanceOf(LocalFilePinner)
+  })
+
+  it('fails closed for mainnet even when NODE_ENV is omitted', () => {
+    const previous = process.env.NODE_ENV
+    delete process.env.NODE_ENV
+    try {
+      expect(createPinner(testConfig({ chainId: 4663, metadataBaseUrl: '' }))).toBeInstanceOf(
+        FailingPinner,
+      )
+    } finally {
+      process.env.NODE_ENV = previous
+    }
   })
 })

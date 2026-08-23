@@ -94,7 +94,13 @@ npm run lint
 npm run format:check
 npm run test
 npm run build
+npm audit --omit=dev --audit-level=moderate
 ```
+
+The remediation checklist and production boundary are versioned in
+[docs/quality-remediation.md](docs/quality-remediation.md). The paid server is
+designed for one process per data directory; use a shared transactional store
+before running multiple replicas.
 
 ## Repository hygiene
 

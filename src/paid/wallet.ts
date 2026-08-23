@@ -1,17 +1,14 @@
 import { createWalletClient, custom, defineChain } from 'viem'
 import type { Account, Chain, EIP1193Provider, Hex, Transport, WalletClient } from 'viem'
-import EthereumProvider from '@walletconnect/ethereum-provider'
 import {
   APP_DESCRIPTION,
   APP_ICONS,
   APP_NAME,
   APP_URL,
-  RPC_URL,
-  RPC_URL_4663,
-  RPC_URL_46630,
   SUPPORTED_CHAIN_IDS,
   WC_PROJECT_ID,
   explorerUrlFor,
+  isRpcConfigured,
   rpcUrlFor,
 } from './config'
 
@@ -30,11 +27,15 @@ export function chainFor(chainId: number) {
         ? 'Robinhood Chain'
         : 'Local EVM'
   const explorer = explorerUrlFor(chainId)
+  const rpcUrl = rpcUrlFor(chainId)
   return defineChain({
     id: chainId,
     name,
     nativeCurrency: { name: 'Ether', symbol: 'ETH', decimals: 18 },
-    rpcUrls: { default: { http: [rpcUrlFor(chainId)] } },
+    // A custom EIP-1193 transport can still use this chain descriptor when
+    // the mainnet RPC is intentionally absent. Do not invent localhost as a
+    // replacement for chain 4663.
+    rpcUrls: { default: { http: rpcUrl ? [rpcUrl] : [] } },
     ...(explorer ? { blockExplorers: { default: { name: 'Blockscout', url: explorer } } } : {}),
   })
 }
@@ -79,15 +80,16 @@ export interface WalletConnectOptions {
  */
 export function walletConnectOptions(): WalletConnectOptions | null {
   if (!WC_PROJECT_ID) return null
+  const chainIds = SUPPORTED_CHAIN_IDS.filter((chainId) => isRpcConfigured(chainId))
+  if (chainIds.length === 0) return null
+  const rpcMap = Object.fromEntries(
+    chainIds.map((chainId) => [chainId, rpcUrlFor(chainId)]),
+  ) as Record<number, string>
   return {
     projectId: WC_PROJECT_ID,
-    chains: [...SUPPORTED_CHAIN_IDS] as [number, ...number[]],
-    optionalChains: [...SUPPORTED_CHAIN_IDS] as [number, ...number[]],
-    rpcMap: {
-      46630: RPC_URL_46630,
-      4663: RPC_URL_4663,
-      31337: RPC_URL,
-    },
+    chains: chainIds as [number, ...number[]],
+    optionalChains: chainIds as [number, ...number[]],
+    rpcMap,
     metadata: {
       name: APP_NAME,
       description: APP_DESCRIPTION,
@@ -110,6 +112,9 @@ export function walletConnectOptions(): WalletConnectOptions | null {
 export async function connectWalletConnect(): Promise<WalletHandle | null> {
   const options = walletConnectOptions()
   if (!options) return null
+  // WalletConnect is an optional path. Keep its SDK out of the first paid-app
+  // parse/evaluation path until the player explicitly chooses the button.
+  const { default: EthereumProvider } = await import('@walletconnect/ethereum-provider')
   const provider = await EthereumProvider.init(options)
   await provider.enable()
   const accounts = (await provider.request({ method: 'eth_requestAccounts' })) as string[]
@@ -136,6 +141,10 @@ export function chainParams(chainId: number): {
   blockExplorerUrls?: string[]
 } {
   const explorer = explorerUrlFor(chainId)
+  const rpcUrl = rpcUrlFor(chainId)
+  if (!rpcUrl) {
+    throw new Error('RPC URL is not configured for chain ' + chainId + '.')
+  }
   return {
     chainId: ('0x' + chainId.toString(16)) as Hex,
     chainName:
@@ -145,7 +154,7 @@ export function chainParams(chainId: number): {
           ? 'Robinhood Chain'
           : 'Local EVM',
     nativeCurrency: { name: 'Ether', symbol: 'ETH', decimals: 18 },
-    rpcUrls: [rpcUrlFor(chainId)],
+    rpcUrls: [rpcUrl],
     ...(explorer ? { blockExplorerUrls: [explorer] } : {}),
   }
 }

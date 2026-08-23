@@ -7,6 +7,7 @@ export const NAV_ITEMS: readonly NavItem[] = [
   { id: 'about', label: 'About', href: '#about' },
   { id: 'art', label: 'Art', href: '#art' },
   { id: 'play', label: 'Play', href: '#play' },
+  { id: 'analytics', label: 'Analytics', href: '#/analytics' },
   { id: 'community', label: 'Community', href: '#community' },
 ]
 
@@ -79,6 +80,12 @@ export const DEMO_SITE_CONFIG: SiteConfig = {
     paidBlurb:
       'Pay a FRONG entry fee, play one replay-verified run, and earn an ERC-721 trophy minted straight to your wallet.',
     paidCta: 'Play for a trophy',
+  },
+  analytics: {
+    eyebrow: 'Pond ledger',
+    title: 'Fee & liquidity analytics',
+    lede: 'The live FRONG trading fee flow, read from on-chain events on Robinhood Chain mainnet — collected, split, compounded, and grown. Exact where the chain says so; nothing estimated, nothing invented.',
+    note: 'Pool facts are verified on-chain: the FRONG/ETH pool charges a static 0.25% LP fee plus a separate 0.04% protocol fee per direction. The compounding threshold (minLiquidityIncrease, 1e20 = 100 FRONG) is a minimum for reinvesting, not a fee percentage.',
   },
   footer: {
     tagline: 'Not Wrong. Just FRONG. Just Early.',

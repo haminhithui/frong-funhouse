@@ -17,6 +17,7 @@ jobs:
 
       - run: npm ci
 
+      - run: npm audit --omit=dev --audit-level=moderate
       - run: npm run typecheck
       - run: npm run lint
       - run: npm run format:check
@@ -24,6 +25,7 @@ jobs:
       - run: npm run build
         env:
           NODE_OPTIONS: --max-old-space-size=6144
+      - run: npm run check:bundle
       - run: npm run check:sim-hash
 
   contracts:
@@ -40,6 +42,8 @@ jobs:
       - run: npm ci
         working-directory: contracts
 
+      - run: npm audit --omit=dev --audit-level=moderate
+        working-directory: contracts
       - run: npx hardhat compile
         working-directory: contracts
       - run: npm run typecheck
@@ -61,9 +65,13 @@ jobs:
       - run: npm ci
         working-directory: apps/server
 
+      - run: npm audit --omit=dev --audit-level=moderate
+        working-directory: apps/server
       - run: npm run typecheck
         working-directory: apps/server
       - run: npm run lint
+        working-directory: apps/server
+      - run: npm run check:store-lock
         working-directory: apps/server
       - run: npm test
         working-directory: apps/server
@@ -86,13 +94,4 @@ jobs:
 
       - run: npx hardhat compile
         working-directory: contracts
-      - run: nohup npx hardhat node > /tmp/hardhat-node.log 2>&1 &
-        working-directory: contracts
-      - run: sleep 5
-      - run: npx hardhat run scripts/deploy-local.ts --network localhost
-        working-directory: contracts
-
-      - run: npm run test:integration
-        working-directory: apps/server
-        env:
-          RPC_URL: http://127.0.0.1:8545
+      - run: npm run e2e:local

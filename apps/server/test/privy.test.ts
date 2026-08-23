@@ -36,6 +36,7 @@ function baseConfig(overrides: Partial<ServerConfig> = {}): ServerConfig {
     kmsRegion: null,
     kmsKeyId: null,
     kmsMinerAddress: null,
+    operatorToken: null,
     ...overrides,
   }
 }
@@ -156,6 +157,23 @@ describe('createPrivyVerifier — key-only local verification (no app secret)', 
       await signIdToken(otherKey),
     )
     expect(result).toEqual({ ok: false, reason: 'identity token invalid' })
+  })
+
+  it('rejects valid access and identity tokens that belong to different users', async () => {
+    const { publicKey, privateKey } = await generateKeyPair('ES256')
+    const verifier = createPrivyVerifier(
+      baseConfig({ privyAppId: APP_ID, privyVerificationKey: await exportSPKI(publicKey) }),
+    )
+    if (!verifier) throw new Error('verifier missing')
+    const result = await verifier.verify(
+      WALLET,
+      await signAccessToken(privateKey, { subject: 'did:privy:user-1' }),
+      await signIdToken(privateKey, { subject: 'did:privy:user-2' }),
+    )
+    expect(result).toEqual({
+      ok: false,
+      reason: 'access and identity tokens belong to different users',
+    })
   })
 
   it('returns null without an app id, without both a secret and a key, or with a malformed key', async () => {

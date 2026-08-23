@@ -65,6 +65,12 @@ export default defineConfig({
         main: fileURLToPath(new URL('./index.html', import.meta.url)),
         paid: fileURLToPath(new URL('./paid/index.html', import.meta.url)),
       },
+      output: {
+        manualChunks(id) {
+          if (id.includes('/src/analytics/')) return 'analytics'
+          return undefined
+        },
+      },
     },
   },
   test: {

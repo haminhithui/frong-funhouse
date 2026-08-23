@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 640" role="img" aria-labelledby="title">
+  <title id="title">Just FRONG trophy</title>
+  <rect width="640" height="640" rx="96" fill="#713f12"/>
+  <circle cx="320" cy="270" r="142" fill="#fde68a"/>
+  <circle cx="270" cy="238" r="22" fill="#713f12"/><circle cx="370" cy="238" r="22" fill="#713f12"/>
+  <path d="M250 320c44 38 96 38 140 0" fill="none" stroke="#713f12" stroke-width="18" stroke-linecap="round"/>
+  <text x="320" y="510" fill="#fff" font-family="sans-serif" font-size="52" font-weight="700" text-anchor="middle">JUST FRONG.</text>
+</svg>

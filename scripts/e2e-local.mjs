@@ -1,35 +1,55 @@
 /**
- * Local end-to-end: stop any chain on 8545, start a PRISTINE Hardhat EVM node,
+ * Local end-to-end: start a PRISTINE Hardhat EVM node on a free 8545 port,
  * deploy the contracts, and run the server's chain-backed integration suite
- * (real faucet/approve/pay txs, real receipt validation, real mint tx). The
- * chain node is left running for manual use.
+ * (real faucet/approve/pay txs, real receipt validation, real mint tx).
+ * The exact child process started here is always stopped before this script
+ * exits, so an E2E run cannot kill an unrelated developer chain or leak a
+ * background node.
  */
 import { spawn } from 'node:child_process'
+import { createConnection } from 'node:net'
 
 const isWin = process.platform === 'win32'
 const npm = isWin ? 'npm.cmd' : 'npm'
 
+function quoteWindowsArg(value) {
+  const arg = String(value)
+  if (!/[\s"&|<>^]/.test(arg)) return arg
+  return '"' + arg.replace(/(["^])/g, '^$1') + '"'
+}
+
+/** Runs npm without shell:true; Windows uses an explicit cmd.exe boundary. */
+function spawnTool(cmd, args, options) {
+  if (!isWin) return spawn(cmd, args, options)
+  const commandLine = [cmd, ...args].map(quoteWindowsArg).join(' ')
+  return spawn(process.env.ComSpec ?? 'cmd.exe', ['/d', '/s', '/c', commandLine], options)
+}
+
 function run(cmd, args, cwd) {
   return new Promise((resolve, reject) => {
-    const child = spawn(cmd, args, { cwd, stdio: 'inherit', shell: isWin })
+    const child = spawnTool(cmd, args, { cwd, stdio: 'inherit' })
+    child.on('error', reject)
     child.on('exit', (code) =>
       code === 0 ? resolve() : reject(new Error(cmd + ' exited with ' + code)),
     )
   })
 }
 
-/** Stops any chain already listening on 8545 so every run starts pristine. */
-async function stopChain() {
-  await new Promise((resolve) => {
-    const command = isWin
-      ? '$c = Get-NetTCPConnection -State Listen -LocalPort 8545 -ErrorAction SilentlyContinue; if ($c) { Stop-Process -Id $c.OwningProcess -Force }'
-      : 'fuser -k 8545/tcp >/dev/null 2>&1 || true'
-    const shell = isWin ? 'powershell' : 'bash'
-    const args = isWin ? ['-NoProfile', '-Command', command] : ['-c', command]
-    const child = spawn(shell, args, { stdio: 'ignore' })
-    child.on('exit', () => resolve())
+function portInUse(port) {
+  return new Promise((resolve) => {
+    const socket = createConnection({ host: '127.0.0.1', port })
+    socket.setTimeout(500)
+    socket.once('connect', () => {
+      socket.destroy()
+      resolve(true)
+    })
+    const free = () => {
+      socket.destroy()
+      resolve(false)
+    }
+    socket.once('timeout', free)
+    socket.once('error', free)
   })
-  await new Promise((resolve) => setTimeout(resolve, 1000))
 }
 
 async function chainUp() {
@@ -49,16 +69,46 @@ async function chainUp() {
   return false
 }
 
+async function stopProcess(child) {
+  if (!child || child.exitCode !== null || !child.pid) return
+  if (isWin) {
+    await new Promise((resolve) => {
+      const killer = spawn('taskkill', ['/PID', String(child.pid), '/T', '/F'], {
+        stdio: 'ignore',
+        windowsHide: true,
+      })
+      killer.on('error', resolve)
+      killer.on('exit', resolve)
+    })
+    return
+  }
+  child.kill('SIGTERM')
+  await new Promise((resolve) => child.once('exit', resolve))
+}
+
 async function main() {
-  await stopChain()
+  if (await portInUse(8545)) {
+    throw new Error('port 8545 is already in use; stop the exact owner before running local E2E')
+  }
   console.log('[e2e] starting a pristine hardhat node…')
-  spawn(npm, ['run', 'node'], { cwd: 'contracts', stdio: 'ignore', detached: !isWin, shell: isWin })
-  if (!(await chainUp())) throw new Error('hardhat node did not come up on http://127.0.0.1:8545')
-  console.log('[e2e] chain up · deploying contracts…')
-  await run(npm, ['run', 'deploy:local'], 'contracts')
-  console.log('[e2e] running server integration suite (real EVM end-to-end)…')
-  await run(npm, ['run', 'test:integration'], 'apps/server')
-  console.log('[e2e] done — the local chain is still running for manual use')
+  const chain = spawnTool(npm, ['run', 'node'], {
+    cwd: 'contracts',
+    stdio: 'ignore',
+    windowsHide: true,
+  })
+  try {
+    if (!(await chainUp())) {
+      throw new Error('hardhat node did not come up on http://127.0.0.1:8545')
+    }
+    console.log('[e2e] chain up · deploying contracts…')
+    await run(npm, ['run', 'deploy:local'], 'contracts')
+    console.log('[e2e] running server integration suite (real EVM end-to-end)…')
+    await run(npm, ['run', 'test:integration'], 'apps/server')
+    console.log('[e2e] integration passed')
+  } finally {
+    console.log('[e2e] stopping the exact hardhat child process')
+    await stopProcess(chain)
+  }
 }
 
 main().catch((error) => {
