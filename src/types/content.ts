@@ -69,6 +69,18 @@ export interface WallConfig {
   posts: readonly XPostRef[]
 }
 
+import type { ArcadeGameId } from '../arcade/types'
+
+export interface ArcadeGameCardConfig {
+  id: ArcadeGameId
+  title: string
+  description: string
+  badge: string
+  thumbnailSrc: string
+  status: 'available' | 'coming-soon'
+  ctaLabel?: string
+}
+
 export interface PlayConfig {
   eyebrow: string
   title: string
@@ -80,6 +92,8 @@ export interface PlayConfig {
   paidTitle: string
   paidBlurb: string
   paidCta: string
+  /** Optional game cards; legacy configs fall back to the FRONG Catch card. */
+  games?: readonly ArcadeGameCardConfig[]
 }
 
 /** Read-only fee/liquidity analytics section copy. */

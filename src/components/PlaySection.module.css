@@ -15,12 +15,12 @@
   margin-top: clamp(28px, 4vw, 44px);
 }
 
-.menu {
+.library {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
   gap: 16px;
   width: 100%;
-  max-width: 760px;
+  max-width: 960px;
 }
 
 .card {
@@ -35,6 +35,35 @@
   transition:
     border-color var(--speed-fast) var(--ease),
     box-shadow var(--speed-fast) var(--ease);
+}
+
+.cardVisual {
+  position: relative;
+  width: 100%;
+  height: 150px;
+  overflow: hidden;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-md);
+  background: var(--moss-2);
+}
+
+.cardImage {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.cardVisual .cardBadge {
+  position: absolute;
+  left: 12px;
+  bottom: 12px;
+}
+
+.cardActions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
 }
 
 .card:hover,

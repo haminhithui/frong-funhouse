@@ -69,9 +69,9 @@ export const DEMO_SITE_CONFIG: SiteConfig = {
   },
   play: {
     eyebrow: 'Pond Arcade',
-    title: 'FRONG Catch',
-    lede: "Catch falling flies on FRONG's lily pad — one minute, forty-five flies, 109 points if you catch them all. Practice is free; trophy runs are paid on-chain.",
-    note: 'Practice mode is free — no wallet, no prizes, scores stay on this device. Trophy runs cost a non-refundable FRONG entry fee and require a wallet.',
+    title: 'Pond Arcade',
+    lede: 'Choose a pond game. Practice stays local and free; the optional FRONG trophy run remains a separate mode.',
+    note: 'Pond Guardian and FRONG Catch practice run locally with no wallet. Trophy runs cost a non-refundable FRONG entry fee and require a wallet.',
     practiceTitle: 'Free practice',
     practiceBlurb:
       'No wallet, no payment, no prizes. One minute, forty-five flies — just pond pride.',
@@ -80,6 +80,25 @@ export const DEMO_SITE_CONFIG: SiteConfig = {
     paidBlurb:
       'Pay a FRONG entry fee, play one replay-verified run, and earn an ERC-721 trophy minted straight to your wallet.',
     paidCta: 'Play for a trophy',
+    games: [
+      {
+        id: 'frong-catch',
+        title: 'FRONG Catch',
+        description: "Catch falling flies on FRONG's lily pad in a one-minute skill run.",
+        badge: 'Practice + trophy run',
+        thumbnailSrc: '/assets/avatar.png',
+        status: 'available',
+      },
+      {
+        id: 'pond-guardian',
+        title: 'Pond Guardian',
+        description: 'Protect a glowing frog from the swamp for 90 seconds.',
+        badge: 'Free · local game',
+        thumbnailSrc: '/assets/games/pond-guardian/hero-3d-v1.webp',
+        status: 'available',
+        ctaLabel: 'Play Pond Guardian',
+      },
+    ],
   },
   analytics: {
     eyebrow: 'Pond ledger',

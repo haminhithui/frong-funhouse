@@ -1,0 +1,74 @@
+{
+  "game": "Pond Guardian",
+  "visualSystem": "sculpted ink bioluminescent swamp",
+  "visualTarget": {
+    "camera": "three-quarter elevated 4:3 arena",
+    "characterHierarchy": "fierce weathered guardian protecting a cute centered frog",
+    "materials": [
+      "wet skin",
+      "worn indigo cloth",
+      "wrapped leather",
+      "scarred iron",
+      "reflective water"
+    ],
+    "palette": [
+      "deep moss",
+      "blue-black",
+      "lime bioluminescence",
+      "warm gold rim light",
+      "magenta lotus"
+    ]
+  },
+  "references": [
+    {
+      "id": "user-reference-3d-pond",
+      "kind": "conversation moodboard",
+      "role": "cinematic 3D material depth, water reflections, and atmospheric lighting only",
+      "shipped": false,
+      "restriction": "Do not redistribute or copy the character, pose, composition, or assets."
+    },
+    {
+      "id": "user-reference-inked-guardian",
+      "kind": "conversation moodboard",
+      "role": "primitive palette, dark swamp mood, golden rim light, guardian/frog contrast, and inked silhouette only",
+      "shipped": false,
+      "restriction": "Do not redistribute or copy the character, pose, composition, or assets."
+    }
+  ],
+  "assets": [
+    {
+      "id": "pond-guardian-hero-3d-v1",
+      "path": "public/assets/games/pond-guardian/hero-3d-v1.webp",
+      "role": "4:3 arcade thumbnail, attract hero, result backdrop, and approved gameplay visual target",
+      "source": "OpenAI built-in image generation from an original project prompt with the two user images used only as non-shipping style references",
+      "generationDate": "2026-08-23",
+      "promptNote": "Original fierce moss guardian and cute centered frog in a semi-3D bioluminescent swamp; no text, logo, copied pose, or source asset reuse.",
+      "license": "Generated specifically for this repository; use is governed by the repository license and applicable OpenAI output terms.",
+      "status": "approved visual target and integrated"
+    },
+    {
+      "id": "pond-guardian-hero-source-v1",
+      "path": "docs/assets/pond-guardian/hero-3d-v1-source.png",
+      "role": "lossless generated source master retained outside the public web build",
+      "source": "same generation as pond-guardian-hero-3d-v1",
+      "license": "Generated specifically for this repository; use is governed by the repository license and applicable OpenAI output terms.",
+      "status": "archived source; not shipped"
+    },
+    {
+      "id": "runtime-canvas-art-v2",
+      "path": "src/games/pond-guardian/render.ts",
+      "role": "runtime family: guardian, frog, four enemy silhouettes, projectiles, reflective pond, lily pads, lotus, lighting, and effects",
+      "source": "original procedural Canvas artwork authored in this repository; no runtime image or external service dependency",
+      "license": "MIT-compatible repository artwork",
+      "status": "integrated 2.5D vertical-slice visual pass"
+    },
+    {
+      "id": "pond-guardian-card-v1",
+      "path": "public/assets/games/pond-guardian/card.svg",
+      "role": "legacy greybox selector fallback retained for history",
+      "source": "original vector artwork authored in this repository",
+      "license": "MIT-compatible repository artwork",
+      "status": "superseded by pond-guardian-hero-3d-v1"
+    }
+  ]
+}
