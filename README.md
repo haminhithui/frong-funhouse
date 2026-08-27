@@ -106,14 +106,27 @@ before running multiple replicas.
 
 - **Package manager: npm.** CI, lockfiles, and all scripts use npm (`npm ci`,
   `npm install`). Do not commit other package-manager lockfiles.
-- **No secrets in the repo, ever.** All `.env` files are gitignored; copy the
-  `.env.example` files and fill in your own values. Private keys (deployer,
-  minter) are environment-only for dev/testnet and KMS/HSM-backed in
-  production — nothing key-shaped is committed. `src/test/paidApp.test.tsx`
-  contains a deliberately throwaway fixture key for tests only.
+- **No secrets in the repo, ever.** The live environment is the repo-root
+  `.env`, copied from the repo-root [`.env.example`](.env.example) names-only
+  template. All `.env` files are gitignored. Private keys (deployer, minter)
+  are environment-only for dev/testnet and KMS/HSM-backed in production —
+  nothing key-shaped is committed. `src/test/paidApp.test.tsx` contains a
+  deliberately throwaway fixture key for tests only.
 - **Generated dirs stay out of git:** `dist/`, `contracts/artifacts/`,
   `contracts/cache/`, `apps/server/data/` (runtime audit store), `smoke/`
   (QA screenshots), and `*.log` are all covered by `.gitignore`.
+
+## Environment layout
+
+The canonical live environment file is the repo-root `.env` (git-ignored):
+
+- Vite loads it automatically for the frontend.
+- Hardhat loads it explicitly from the repo root.
+- `apps/server` loads it through `../../.env`.
+- Cloudflare staging/production secrets belong in Wrangler's remote secret store; do not keep a second persistent secret file under `apps/worker/`.
+
+The component `.env.example` files are names-only templates and are not live
+configuration files. Never commit `.env`, private keys, or provider secrets.
 
 ## Config
 
@@ -138,9 +151,11 @@ To reuse this starter, replace these files — and the metadata in `index.html` 
 
 The paid flow is fully wired for testnet: WalletConnect (project id +
 per-chain `rpcMap` + app metadata via `VITE_*` env), env-driven contract
-deployment with Blockscout verification (`contracts/.env.example`,
-`npm --prefix contracts run deploy:testnet`), and an env-driven game server
-(`apps/server/.env.example`). See the step-by-step runbook at
+deployment with Blockscout verification using the repo-root `.env` (copied from
+[`.env.example`](.env.example); `npm --prefix contracts run deploy:testnet`), and
+an env-driven game server using that same root file. The component
+`.env.example` files are reference lists of the variables each component reads,
+not live secret locations. See the step-by-step runbook at
 `.hermes/testnet-deployment-runbook.md` — official RPC/explorer endpoints and
 keys are owner-supplied, never invented.
 

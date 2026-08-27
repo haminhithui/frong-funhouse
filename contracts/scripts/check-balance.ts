@@ -1,6 +1,9 @@
-import 'dotenv/config'
+import { config as loadDotenv } from 'dotenv'
+import { resolve } from 'node:path'
 import { createPublicClient, http } from 'viem'
 import { privateKeyToAddress } from 'viem/accounts'
+
+loadDotenv({ path: resolve(__dirname, '..', '.env') })
 
 /** Prints the deployer's public address, balance, chain id, and gas price — never the key. */
 async function main() {
