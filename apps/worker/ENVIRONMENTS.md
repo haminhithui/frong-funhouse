@@ -69,8 +69,10 @@ No database IDs, contract addresses, or account IDs are invented here.
 ## 4. Secrets — **names only**, never values
 
 Set per environment with `npx wrangler secret put <NAME> --env <env>` and never
-committed. `.dev.vars.example` lists the same names with empty placeholders;
-copy to `.dev.vars` (git-ignored) for local development only.
+committed. `.dev.vars.example` lists the same names with empty placeholders for
+Wrangler's local-only binding format. Do not keep a persistent `.dev.vars`; the
+repo's single live local env file is the root `.env`, while staging/production
+secrets remain in Wrangler's remote secret store.
 
 | Secret name              | Purpose                                                                                     |
 | ------------------------ | ------------------------------------------------------------------------------------------- |

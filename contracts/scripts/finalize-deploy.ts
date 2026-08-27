@@ -1,8 +1,10 @@
-import 'dotenv/config'
+import { config as loadDotenv } from 'dotenv'
 import hre from 'hardhat'
 import { writeFileSync, mkdirSync } from 'node:fs'
 import { join } from 'node:path'
 import { requireAddress, requirePositiveWei } from './validation'
+
+loadDotenv({ path: join(__dirname, '..', '.env') })
 
 /**
  * Finalizes an existing testnet deployment WITHOUT redeploying: grants the

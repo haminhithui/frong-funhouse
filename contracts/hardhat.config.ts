@@ -1,7 +1,11 @@
 import type { HardhatUserConfig } from 'hardhat/config'
 import '@nomicfoundation/hardhat-viem'
 import '@nomicfoundation/hardhat-verify'
-import 'dotenv/config'
+import { config as loadDotenv } from 'dotenv'
+import { resolve } from 'node:path'
+
+// All local Frong services share the single repo-root .env file.
+loadDotenv({ path: resolve(__dirname, '..', '.env') })
 
 /**
  * Localhost runs the real in-process/local EVM used by tests and the server

@@ -1,7 +1,9 @@
-import 'dotenv/config'
+import { config as loadDotenv } from 'dotenv'
 import { createPublicClient, http, parseAbi } from 'viem'
 import { readFileSync } from 'node:fs'
 import { join } from 'node:path'
+
+loadDotenv({ path: join(__dirname, '..', '.env') })
 
 const RPC = process.env.FRONG_TESTNET_RPC_URL as string
 // Browser URL comes from env (pinned in .env.example as verified live). The
