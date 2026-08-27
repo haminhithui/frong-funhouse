@@ -1,0 +1,23 @@
+# FRONG Catch Worker — local development secrets template.
+#
+# Copy to .dev.vars (git-ignored) and fill in REAL local/testnet values there.
+# NEVER commit real values, tokens, or private keys to this or any file.
+#
+# Names must match ENVIRONMENTS.md §4. Set per-environment remotely with:
+#   npx wrangler secret put <NAME> --env staging
+#   npx wrangler secret put <NAME> --env production
+
+# Hot-wallet private key for minting (local dev only; use a throwaway key).
+# Ignored when KMS_REGION/KMS_KEY_ID/KMS_MINTER_ADDRESS are all set.
+MINTER_KEY=
+
+# Privy server-side verification (secret stays server-side, never client-visible).
+PRIVY_APP_SECRET=
+PRIVY_VERIFICATION_KEY=
+
+# Random >=32-character token for mint requeue/recovery operations.
+OPERATOR_TOKEN=
+
+# Pinata provider secret for metadata pinning (production minting fails closed
+# without it; local dev may use the file pinner instead).
+PINATA_JWT=
