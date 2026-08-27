@@ -57,8 +57,7 @@ export interface WorkerGameConfig {
 }
 
 export type ConfigResult =
-  | { ok: true; config: WorkerGameConfig }
-  | { ok: false; problems: string[] }
+  { ok: true; config: WorkerGameConfig } | { ok: false; problems: string[] }
 
 const APP_ENVIRONMENTS: readonly AppEnvironment[] = [
   'local',

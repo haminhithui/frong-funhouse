@@ -106,7 +106,9 @@ function seedPayment(db: FakeD1, id = 'pay-1', player = PLAYER, txHash = tx('11'
   )
 }
 
-const challengeInput = (overrides: Partial<Parameters<ReturnType<typeof createAuthRepo>['issueChallenge']>[0]> = {}) => ({
+const challengeInput = (
+  overrides: Partial<Parameters<ReturnType<typeof createAuthRepo>['issueChallenge']>[0]> = {},
+) => ({
   player: PLAYER,
   challengeHash: HASH_A,
   expiresAt: '2026-01-01T00:10:00.000Z',
@@ -184,16 +186,32 @@ test('issueChallenge persists one pending challenge bound to the wallet; only th
   // the stored schema has no column capable of holding a raw challenge
   // payload or signature: id/player/challenge_hash/status/payment_id/times
   assert.deepEqual(
-    db.raw('PRAGMA table_info(wallet_challenges)').map((c) => String(c.name)).sort(),
+    db
+      .raw('PRAGMA table_info(wallet_challenges)')
+      .map((c) => String(c.name))
+      .sort(),
     [
-      'challenge_hash', 'consumed_at', 'created_at', 'expires_at', 'id',
-      'payment_id', 'player', 'status', 'updated_at',
+      'challenge_hash',
+      'consumed_at',
+      'created_at',
+      'expires_at',
+      'id',
+      'payment_id',
+      'player',
+      'status',
+      'updated_at',
     ],
   )
   // read back: plain, owner-filtered, wrong wallet -> null, unknown -> null
-  assert.deepEqual(await repo.getChallenge(challenge.challengeId, { at: '2026-01-01T00:01:00.000Z' }), challenge)
   assert.deepEqual(
-    await repo.getChallenge(challenge.challengeId, { player: PLAYER, at: '2026-01-01T00:05:00.000Z' }),
+    await repo.getChallenge(challenge.challengeId, { at: '2026-01-01T00:01:00.000Z' }),
+    challenge,
+  )
+  assert.deepEqual(
+    await repo.getChallenge(challenge.challengeId, {
+      player: PLAYER,
+      at: '2026-01-01T00:05:00.000Z',
+    }),
     challenge,
   )
   assert.equal(await repo.getChallenge(challenge.challengeId, { player: PLAYER2 }), null)
@@ -213,7 +231,9 @@ test('issueChallenge is one-per-digest: replay returns already_issued; another w
   assert.equal(foreign.record.player, PLAYER)
   assert.equal(db.raw('SELECT COUNT(*) c FROM wallet_challenges')[0].c, 1)
   // a distinct digest for another wallet is a fresh, independent row
-  const other = await repo.issueChallenge(challengeInput({ player: PLAYER2, challengeHash: HASH_B }))
+  const other = await repo.issueChallenge(
+    challengeInput({ player: PLAYER2, challengeHash: HASH_B }),
+  )
   assert.equal(other.outcome, 'issued')
   assert.equal(db.raw('SELECT COUNT(*) c FROM wallet_challenges')[0].c, 2)
 })
@@ -226,8 +246,14 @@ test('issueChallenge rejects raw credentials and caller bugs before any SQL runs
     repo.issueChallenge(challengeInput({ challengeHash: 'privy-challenge-nonce-123' })),
     TypeError,
   )
-  await assert.rejects(repo.issueChallenge(challengeInput({ challengeHash: digest('a').slice(0, 63) })), TypeError)
-  await assert.rejects(repo.issueChallenge(challengeInput({ challengeHash: 'z'.repeat(64) })), TypeError)
+  await assert.rejects(
+    repo.issueChallenge(challengeInput({ challengeHash: digest('a').slice(0, 63) })),
+    TypeError,
+  )
+  await assert.rejects(
+    repo.issueChallenge(challengeInput({ challengeHash: 'z'.repeat(64) })),
+    TypeError,
+  )
   // already-expired expiry is a caller bug (boundary: == at is expired)
   await assert.rejects(
     repo.issueChallenge(challengeInput({ expiresAt: '2025-12-31T23:59:59.999Z' })),
@@ -244,7 +270,10 @@ test('challenge expiry: get lazily transitions to expired at/past the boundary; 
   const db = new FakeD1()
   const { repo, challenge } = await seedChallenge(db)
   // still pending one millisecond before expiry
-  assert.equal((await repo.getChallenge(challenge.challengeId, { at: '2026-01-01T00:09:59.999Z' }))?.status, 'pending')
+  assert.equal(
+    (await repo.getChallenge(challenge.challengeId, { at: '2026-01-01T00:09:59.999Z' }))?.status,
+    'pending',
+  )
   // at exactly expires_at the challenge is expired (valid strictly until then)
   const at = '2026-01-01T00:10:00.000Z'
   const got = await repo.getChallenge(challenge.challengeId, { at })
@@ -252,7 +281,10 @@ test('challenge expiry: get lazily transitions to expired at/past the boundary; 
   assert.equal(got?.consumedAt, null)
   // the transition is persisted exactly once; re-reads agree
   assert.equal(db.raw('SELECT status FROM wallet_challenges')[0].status, 'expired')
-  assert.deepEqual(await repo.getChallenge(challenge.challengeId, { at: '2026-01-01T00:11:00.000Z' }), got)
+  assert.deepEqual(
+    await repo.getChallenge(challenge.challengeId, { at: '2026-01-01T00:11:00.000Z' }),
+    got,
+  )
   // consuming an expired challenge is refused and stores nothing
   const res = await repo.consumeChallenge(consumeInput(challenge.challengeId, { at }))
   assert.equal(res.outcome, 'expired')
@@ -263,7 +295,9 @@ test('a pending-but-past-expiry challenge (no prior read) is refused as expired 
   const db = new FakeD1()
   const { repo, challenge } = await seedChallenge(db)
   assert.equal(db.raw('SELECT status FROM wallet_challenges')[0].status, 'pending')
-  const res = await repo.consumeChallenge(consumeInput(challenge.challengeId, { at: '2026-01-01T00:20:00.000Z' }))
+  const res = await repo.consumeChallenge(
+    consumeInput(challenge.challengeId, { at: '2026-01-01T00:20:00.000Z' }),
+  )
   assert.equal(res.outcome, 'expired')
   assert.equal(res.record.status, 'expired')
   assert.equal(db.raw('SELECT consumed_at FROM wallet_challenges')[0].consumed_at, null)
@@ -294,7 +328,9 @@ test('25 interleaved consumes: exactly one accepted, rest already_consumed', asy
   const results = await Promise.all(
     Array.from({ length: 25 }, (_, i) =>
       repo.consumeChallenge(
-        consumeInput(challenge.challengeId, { at: `2026-01-01T00:00:${String(i).padStart(2, '0')}.000Z` }),
+        consumeInput(challenge.challengeId, {
+          at: `2026-01-01T00:00:${String(i).padStart(2, '0')}.000Z`,
+        }),
       ),
     ),
   )
@@ -334,12 +370,16 @@ test('consume binds the payment one-use; replays with the same payment are idemp
   const db = new FakeD1()
   seedPayment(db)
   const { repo, challenge } = await seedChallenge(db)
-  const first = await repo.consumeChallenge(consumeInput(challenge.challengeId, { paymentId: 'pay-1' }))
+  const first = await repo.consumeChallenge(
+    consumeInput(challenge.challengeId, { paymentId: 'pay-1' }),
+  )
   assert.equal(first.outcome, 'accepted')
   assert.equal(first.record.paymentId, 'pay-1')
   assert.equal(db.raw('SELECT payment_id FROM wallet_challenges')[0].payment_id, 'pay-1')
   // replay with the SAME payment: already_consumed, binding unchanged
-  const replay = await repo.consumeChallenge(consumeInput(challenge.challengeId, { paymentId: 'pay-1' }))
+  const replay = await repo.consumeChallenge(
+    consumeInput(challenge.challengeId, { paymentId: 'pay-1' }),
+  )
   assert.equal(replay.outcome, 'already_consumed')
   assert.deepEqual(replay.record, first.record)
 })
@@ -353,15 +393,22 @@ test('duplicate payment bindings: another challenge cannot claim the same paymen
   assert.equal(a.outcome, 'issued')
   assert.equal(b.outcome, 'issued')
   // challenge A binds pay-1 first
-  const first = await repo.consumeChallenge(consumeInput(a.record.challengeId, { paymentId: 'pay-1' }))
+  const first = await repo.consumeChallenge(
+    consumeInput(a.record.challengeId, { paymentId: 'pay-1' }),
+  )
   assert.equal(first.outcome, 'accepted')
   // challenge B attempting the same payment: payment_conflict, A unchanged
-  const conflict = await repo.consumeChallenge(consumeInput(b.record.challengeId, { paymentId: 'pay-1' }))
+  const conflict = await repo.consumeChallenge(
+    consumeInput(b.record.challengeId, { paymentId: 'pay-1' }),
+  )
   assert.equal(conflict.outcome, 'payment_conflict')
   assert.equal(conflict.record.challengeId, a.record.challengeId)
   assert.equal(conflict.record.paymentId, 'pay-1')
   // B stays pending and unbound; only one row holds the payment
-  assert.equal(db.raw('SELECT COUNT(*) c FROM wallet_challenges WHERE payment_id = ?', 'pay-1')[0].c, 1)
+  assert.equal(
+    db.raw('SELECT COUNT(*) c FROM wallet_challenges WHERE payment_id = ?', 'pay-1')[0].c,
+    1,
+  )
   const bStored = db.raw('SELECT * FROM wallet_challenges WHERE challenge_hash = ?', HASH_B)[0]
   assert.equal(String(bStored.status), 'pending')
   assert.equal(bStored.payment_id, null)
@@ -372,10 +419,14 @@ test('a bound challenge refuses a DIFFERENT payment, and an unbound replay canno
   seedPayment(db, 'pay-1')
   seedPayment(db, 'pay-2', PLAYER, tx('22'))
   const { repo, challenge } = await seedChallenge(db)
-  const first = await repo.consumeChallenge(consumeInput(challenge.challengeId, { paymentId: 'pay-1' }))
+  const first = await repo.consumeChallenge(
+    consumeInput(challenge.challengeId, { paymentId: 'pay-1' }),
+  )
   assert.equal(first.outcome, 'accepted')
   // replay binding a different payment: conflict, original binding kept
-  const res = await repo.consumeChallenge(consumeInput(challenge.challengeId, { paymentId: 'pay-2' }))
+  const res = await repo.consumeChallenge(
+    consumeInput(challenge.challengeId, { paymentId: 'pay-2' }),
+  )
   assert.equal(res.outcome, 'payment_conflict')
   assert.equal(res.record.paymentId, 'pay-1')
   assert.equal(db.raw('SELECT payment_id FROM wallet_challenges')[0].payment_id, 'pay-1')
@@ -396,7 +447,9 @@ test('issueToken persists one active token bound to the wallet and challenge/pay
   const db = new FakeD1()
   seedPayment(db)
   const { repo, challenge } = await seedChallenge(db)
-  const consumed = await repo.consumeChallenge(consumeInput(challenge.challengeId, { paymentId: 'pay-1' }))
+  const consumed = await repo.consumeChallenge(
+    consumeInput(challenge.challengeId, { paymentId: 'pay-1' }),
+  )
   assert.equal(consumed.outcome, 'accepted')
   const res = await repo.issueToken(
     tokenInput({ challengeId: challenge.challengeId, paymentId: 'pay-1' }),
@@ -411,10 +464,21 @@ test('issueToken persists one active token bound to the wallet and challenge/pay
   assert.equal(db.raw('SELECT COUNT(*) c FROM auth_tokens')[0].c, 1)
   // the stored schema has no column capable of holding a raw bearer token
   assert.deepEqual(
-    db.raw('PRAGMA table_info(auth_tokens)').map((c) => String(c.name)).sort(),
+    db
+      .raw('PRAGMA table_info(auth_tokens)')
+      .map((c) => String(c.name))
+      .sort(),
     [
-      'challenge_id', 'created_at', 'expires_at', 'id', 'payment_id',
-      'player', 'revoked_at', 'status', 'token_hash', 'updated_at',
+      'challenge_id',
+      'created_at',
+      'expires_at',
+      'id',
+      'payment_id',
+      'player',
+      'revoked_at',
+      'status',
+      'token_hash',
+      'updated_at',
     ],
   )
 })
@@ -470,8 +534,14 @@ test('issueToken rejects raw bearer tokens and caller bugs before any SQL runs',
   const db = new FakeD1()
   const repo = createAuthRepo(db)
   // a raw bearer token is NOT a 64-hex sha-256 digest — never persisted
-  await assert.rejects(repo.issueToken(tokenInput({ tokenHash: 'Bearer privy_9f8e7d6c' })), TypeError)
-  await assert.rejects(repo.issueToken(tokenInput({ tokenHash: TOKEN_A.toUpperCase() + 'x' })), TypeError)
+  await assert.rejects(
+    repo.issueToken(tokenInput({ tokenHash: 'Bearer privy_9f8e7d6c' })),
+    TypeError,
+  )
+  await assert.rejects(
+    repo.issueToken(tokenInput({ tokenHash: TOKEN_A.toUpperCase() + 'x' })),
+    TypeError,
+  )
   await assert.rejects(repo.issueToken(tokenInput({ tokenHash: '' })), TypeError)
   await assert.rejects(
     repo.issueToken(tokenInput({ expiresAt: '2025-12-31T23:59:59.999Z' })),
@@ -501,8 +571,14 @@ test('token hash lookup: resolveToken finds the row by digest only (case-normali
   // wallet binding: the token authenticates exactly one wallet (explicit
   // clock keeps these inside the validity window; `at` defaults to the real
   // wall clock, which is past the fixed 2026-01-01 expiry instants)
-  assert.equal((await repo.resolveToken(TOKEN_A, { player: PLAYER2, at: '2026-01-01T00:30:00.000Z' })).outcome, 'wrong_player')
-  assert.equal((await repo.resolveToken(TOKEN_A, { player: PLAYER, at: '2026-01-01T00:30:00.000Z' })).outcome, 'valid')
+  assert.equal(
+    (await repo.resolveToken(TOKEN_A, { player: PLAYER2, at: '2026-01-01T00:30:00.000Z' })).outcome,
+    'wrong_player',
+  )
+  assert.equal(
+    (await repo.resolveToken(TOKEN_A, { player: PLAYER, at: '2026-01-01T00:30:00.000Z' })).outcome,
+    'valid',
+  )
 })
 
 test('token expiry: resolve lazily transitions to expired at the boundary; revocation still visible', async () => {
@@ -510,7 +586,10 @@ test('token expiry: resolve lazily transitions to expired at the boundary; revoc
   const { repo } = { repo: createAuthRepo(db) }
   const issued = await repo.issueToken(tokenInput()) // expires 2026-01-01T01:00:00.000Z
   assert.equal(issued.outcome, 'issued')
-  assert.equal((await repo.resolveToken(TOKEN_A, { at: '2026-01-01T00:59:59.999Z' })).outcome, 'valid')
+  assert.equal(
+    (await repo.resolveToken(TOKEN_A, { at: '2026-01-01T00:59:59.999Z' })).outcome,
+    'valid',
+  )
   const at = '2026-01-01T01:00:00.000Z'
   const got = await repo.resolveToken(TOKEN_A, { at })
   assert.equal(got.outcome, 'expired')
@@ -537,7 +616,10 @@ test('revocation is one-way and idempotent: first-write-wins revoked_at', async 
   const replay = await repo.revokeToken({ tokenHash: TOKEN_A, at: '2026-01-01T00:40:00.000Z' })
   assert.equal(replay.outcome, 'already_revoked')
   assert.deepEqual(replay.record, first.record)
-  assert.equal(db.raw('SELECT revoked_at, status FROM auth_tokens')[0].revoked_at, first.record.revokedAt)
+  assert.equal(
+    db.raw('SELECT revoked_at, status FROM auth_tokens')[0].revoked_at,
+    first.record.revokedAt,
+  )
   // a revoked token never resolves as valid, even before its expiry
   const resolved = await repo.resolveToken(TOKEN_A, { at: '2026-01-01T00:21:00.000Z' })
   assert.equal(resolved.outcome, 'revoked')
@@ -553,7 +635,10 @@ test('25 interleaved revocations: exactly one revoked, rest already_revoked', as
   await repo.issueToken(tokenInput())
   const results = await Promise.all(
     Array.from({ length: 25 }, (_, i) =>
-      repo.revokeToken({ tokenHash: TOKEN_A, at: `2026-01-01T00:00:${String(i).padStart(2, '0')}.000Z` }),
+      repo.revokeToken({
+        tokenHash: TOKEN_A,
+        at: `2026-01-01T00:00:${String(i).padStart(2, '0')}.000Z`,
+      }),
     ),
   )
   assert.equal(results.filter((x) => x.outcome === 'revoked').length, 1)
@@ -572,8 +657,14 @@ test('malformed state: rows with unexpected statuses are rejected loudly, never 
   // simulate corruption: a status outside the CHECK enum lands in a row
   db.raw(`UPDATE wallet_challenges SET status = 'bogus' WHERE id = ?`, challenge.challengeId)
   db.raw(`UPDATE auth_tokens SET status = 'bogus' WHERE token_hash = ?`, TOKEN_A)
-  await assert.rejects(repo.getChallenge(challenge.challengeId), /unexpected wallet_challenges\.status/)
-  await assert.rejects(repo.consumeChallenge(consumeInput(challenge.challengeId)), /unexpected wallet_challenges\.status/)
+  await assert.rejects(
+    repo.getChallenge(challenge.challengeId),
+    /unexpected wallet_challenges\.status/,
+  )
+  await assert.rejects(
+    repo.consumeChallenge(consumeInput(challenge.challengeId)),
+    /unexpected wallet_challenges\.status/,
+  )
   await assert.rejects(repo.resolveToken(TOKEN_A), /unexpected auth_tokens\.status/)
   await assert.rejects(repo.revokeToken({ tokenHash: TOKEN_A }), /unexpected auth_tokens\.status/)
 })

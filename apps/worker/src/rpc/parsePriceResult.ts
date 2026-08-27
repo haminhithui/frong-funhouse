@@ -126,10 +126,7 @@ export function parsePriceResult(
     return fail('invalid_result', 'result must be a hex string, got ' + describe(result))
   }
   if (!HEX_DATA.test(result)) {
-    return fail(
-      'invalid_result',
-      'result is not non-empty 0x-prefixed hex data: ' + quote(result),
-    )
+    return fail('invalid_result', 'result is not non-empty 0x-prefixed hex data: ' + quote(result))
   }
   const digits = result.length - 2 // strip the literal '0x'
   if (digits % 2 !== 0) {

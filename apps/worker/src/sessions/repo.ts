@@ -249,9 +249,7 @@ export function createSessionsRepo(db: D1DatabaseLike): SessionsRepo {
    * repo's classify). Infrastructure errors here propagate naturally; only
    * the null-insert path reaches this function. */
   async function classifyCreate(input: CreateSessionInput): Promise<CreateSessionResult> {
-    const existing = toRecord(
-      await db.prepare(SELECT_BY_PAYMENT_SQL).bind(input.paymentId).first(),
-    )
+    const existing = toRecord(await db.prepare(SELECT_BY_PAYMENT_SQL).bind(input.paymentId).first())
     if (existing && existing.player === input.player) {
       return { outcome: 'already_exists', record: existing }
     }
@@ -289,7 +287,9 @@ export function createSessionsRepo(db: D1DatabaseLike): SessionsRepo {
       // Caller bugs are rejected before SQL (the schema has no expiry CHECK
       // and a REAL seed would not trip the INTEGER CHECK).
       if (!Number.isSafeInteger(input.seed) || input.seed < 0) {
-        throw new TypeError(`sessions repo: seed must be a non-negative safe integer: ${input.seed}`)
+        throw new TypeError(
+          `sessions repo: seed must be a non-negative safe integer: ${input.seed}`,
+        )
       }
       if (isExpiredAt(input.expiresAt, at)) {
         throw new RangeError(
@@ -318,20 +318,18 @@ export function createSessionsRepo(db: D1DatabaseLike): SessionsRepo {
       return classifyCreate(input)
     },
 
-    async get(
-      sessionId: string,
-      options?: GetSessionOptions,
-    ): Promise<SessionRecord | null> {
+    async get(sessionId: string, options?: GetSessionOptions): Promise<SessionRecord | null> {
       const at = options?.at ?? nowIso()
       let record = toRecord(await db.prepare(SELECT_BY_ID_SQL).bind(sessionId).first())
       if (!record) return null
       if (options?.player !== undefined && record.player !== options.player) return null
       if (record.status === 'active' && isExpiredAt(record.expiresAt, at)) {
         // Lost the transition race (another reader/sweep won): re-read.
-        const transitioned = toRecord(
-          await db.prepare(EXPIRE_SQL).bind(at, sessionId, at).first(),
-        )
-        record = transitioned ?? toRecord(await db.prepare(SELECT_BY_ID_SQL).bind(sessionId).first()) ?? record
+        const transitioned = toRecord(await db.prepare(EXPIRE_SQL).bind(at, sessionId, at).first())
+        record =
+          transitioned ??
+          toRecord(await db.prepare(SELECT_BY_ID_SQL).bind(sessionId).first()) ??
+          record
       }
       return record
     },

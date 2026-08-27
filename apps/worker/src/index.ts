@@ -118,10 +118,7 @@ const SERVICE_NAME = 'frong-catch-worker'
 const CORS_ALLOW_METHODS = 'GET, POST, OPTIONS'
 
 /** Request headers a cross-origin caller may send (case-insensitive). */
-const CORS_ALLOWED_REQUEST_HEADERS: ReadonlySet<string> = new Set([
-  'authorization',
-  'content-type',
-])
+const CORS_ALLOWED_REQUEST_HEADERS: ReadonlySet<string> = new Set(['authorization', 'content-type'])
 
 /** How long a browser may cache a successful preflight. */
 const CORS_MAX_AGE = '86400'
@@ -214,7 +211,8 @@ function preflightHeaders(allowedOrigin: string | null, request: Request): Recor
 }
 
 function jsonResponse(
-  body: HealthBody | ErrorBody | ConfigInvalidBody | PriceUnavailableBody | ConfigBody | ChallengeBody,
+  body:
+    HealthBody | ErrorBody | ConfigInvalidBody | PriceUnavailableBody | ConfigBody | ChallengeBody,
   status: number,
   headers: Record<string, string> = {},
 ): Response {
@@ -274,10 +272,7 @@ export function createFetchHandler(deps: WorkerDeps = {}): FetchHandler {
       // middleware alone — no routing, no config load, no RPC fetch, no body.
       // Bare OPTIONS without the preflight marker falls through to the 404
       // below, preserving the pre-CORS behavior.
-      if (
-        request.method === 'OPTIONS' &&
-        request.headers.has('access-control-request-method')
-      ) {
+      if (request.method === 'OPTIONS' && request.headers.has('access-control-request-method')) {
         return new Response(null, {
           status: 204,
           headers: preflightHeaders(allowedOrigin, request),
@@ -337,11 +332,10 @@ export function createFetchHandler(deps: WorkerDeps = {}): FetchHandler {
         }
         const player = parseChallengeAddress(parsed)
         if (player === null) {
-          return jsonResponse(
-            { ok: false, error: 'valid wallet address required' },
-            400,
-            { 'cache-control': 'no-store', ...cors },
-          )
+          return jsonResponse({ ok: false, error: 'valid wallet address required' }, 400, {
+            'cache-control': 'no-store',
+            ...cors,
+          })
         }
 
         // The challenge's Chain ID line is the worker's CONFIGURED chain,
@@ -358,11 +352,10 @@ export function createFetchHandler(deps: WorkerDeps = {}): FetchHandler {
 
         const db = env.DB
         if (!db) {
-          return jsonResponse(
-            { ok: false, error: 'auth store unavailable' },
-            503,
-            { 'cache-control': 'no-store', ...cors },
-          )
+          return jsonResponse({ ok: false, error: 'auth store unavailable' }, 503, {
+            'cache-control': 'no-store',
+            ...cors,
+          })
         }
 
         // issueWalletChallenge persists ONLY sha256(nonce) + metadata via
@@ -380,11 +373,10 @@ export function createFetchHandler(deps: WorkerDeps = {}): FetchHandler {
           }
           return jsonResponse(body, 200, { 'cache-control': 'no-store', ...cors })
         } catch {
-          return jsonResponse(
-            { ok: false, error: 'could not issue challenge' },
-            500,
-            { 'cache-control': 'no-store', ...cors },
-          )
+          return jsonResponse({ ok: false, error: 'could not issue challenge' }, 500, {
+            'cache-control': 'no-store',
+            ...cors,
+          })
         }
       }
 

@@ -76,8 +76,7 @@ export interface WorkerGameConfig {
 }
 
 export type ConfigResult =
-  | { ok: true; config: WorkerGameConfig }
-  | { ok: false; problems: string[] }
+  { ok: true; config: WorkerGameConfig } | { ok: false; problems: string[] }
 
 const APP_ENVIRONMENTS: readonly AppEnvironment[] = [
   'local',
@@ -90,7 +89,7 @@ const CHAIN_IDS = [31337, 46630, 4663] as const
 const TESTNET_CHAIN_ID = 46630
 const MAINNET_CHAIN_ID = 4663
 
-function envValue(env: Env, key: keyof Env): string | null {
+function envValue(env: Env, key: Exclude<keyof Env, 'DB'>): string | null {
   const value = env[key]?.trim()
   return value ? value : null
 }

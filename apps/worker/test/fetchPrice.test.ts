@@ -68,9 +68,10 @@ interface CapturedCall {
 }
 
 /** Recording mock: queues Responses/Errors; every call is captured. */
-function recordingFetch(
-  behavior: Array<Response | Error>,
-): { fetchImpl: FetchLike; calls: CapturedCall[] } {
+function recordingFetch(behavior: Array<Response | Error>): {
+  fetchImpl: FetchLike
+  calls: CapturedCall[]
+} {
   const calls: CapturedCall[] = []
   const fetchImpl: FetchLike = (input, init) => {
     calls.push({ input, ...init })
@@ -116,7 +117,10 @@ test('puts the exact buildPriceCall wire shape on the HTTP layer', async () => {
   assert.ok(calls[0].signal instanceof AbortSignal)
   assert.equal(calls[0].signal.aborted, false)
   // Parity with the pure request builder: identical calldata on the wire.
-  assert.deepEqual(JSON.parse(calls[0].body), bodyOf(buildPriceCallRequest(FIXTURE_SOURCE.entryAddress)))
+  assert.deepEqual(
+    JSON.parse(calls[0].body),
+    bodyOf(buildPriceCallRequest(FIXTURE_SOURCE.entryAddress)),
+  )
 })
 
 // ---- non-2xx / transport failures ------------------------------------------------
@@ -152,11 +156,9 @@ test('maps the timeout AbortSignal firing to rpc_timeout (retryable)', async () 
   // the outcome is deterministic without any test-side sleeping.
   const hanging: FetchLike = (_input, init) =>
     new Promise((_resolve, reject) => {
-      init.signal.addEventListener(
-        'abort',
-        () => reject(new Error('This operation was aborted')),
-        { once: true },
-      )
+      init.signal.addEventListener('abort', () => reject(new Error('This operation was aborted')), {
+        once: true,
+      })
     })
   const f = failureOf(
     await createPriceFetcher(FIXTURE_SOURCE, { fetchImpl: hanging, timeoutMs: 10 }).fetchPrice(),

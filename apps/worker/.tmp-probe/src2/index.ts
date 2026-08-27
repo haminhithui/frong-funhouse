@@ -97,18 +97,14 @@ export function createFetchHandler(deps: WorkerDeps = {}): ExportedHandler<Env> 
           // LIVE on-chain read; any failure fails the request — no fallback.
           feeAmount = await readPrice(config)
         } catch {
-          return jsonResponse(
-            { ok: false, error: 'could not read the on-chain price' },
-            503,
-            { 'cache-control': 'no-store' },
-          )
+          return jsonResponse({ ok: false, error: 'could not read the on-chain price' }, 503, {
+            'cache-control': 'no-store',
+          })
         }
         if (feeAmount <= 0n) {
-          return jsonResponse(
-            { ok: false, error: 'could not read the on-chain price' },
-            503,
-            { 'cache-control': 'no-store' },
-          )
+          return jsonResponse({ ok: false, error: 'could not read the on-chain price' }, 503, {
+            'cache-control': 'no-store',
+          })
         }
 
         const body: ConfigBody = {

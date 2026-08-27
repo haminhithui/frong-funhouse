@@ -52,9 +52,10 @@ interface CapturedCall {
 }
 
 /** Recording mock: queues Responses/Errors; every call is captured. */
-function recordingFetch(
-  behavior: Array<Response | Error>,
-): { fetchImpl: FetchLike; calls: CapturedCall[] } {
+function recordingFetch(behavior: Array<Response | Error>): {
+  fetchImpl: FetchLike
+  calls: CapturedCall[]
+} {
   const calls: CapturedCall[] = []
   const fetchImpl: FetchLike = (input, init) => {
     calls.push({ input, ...init })
@@ -137,11 +138,10 @@ test('GET /api/config with an empty env is a structured 503 and never fetches', 
 })
 
 test('GET /api/config with one invalid var reports that concrete problem', async () => {
-  const { res, body, calls } = await callRoute(
-    [rpcOk(word(PRICE_WEI))],
-    '/api/config',
-    { ...FAKE_ENV, BUILD_HASH: 'deadbeef' },
-  )
+  const { res, body, calls } = await callRoute([rpcOk(word(PRICE_WEI))], '/api/config', {
+    ...FAKE_ENV,
+    BUILD_HASH: 'deadbeef',
+  })
 
   assert.equal(res.status, 503)
   assert.equal(body.ok, false)
@@ -185,10 +185,13 @@ test('GET /api/config fails closed on a zero price and a JSON-RPC error', async 
 
 /** 2xx JSON-RPC error envelope. */
 function rpcOkError(): Response {
-  return new Response(JSON.stringify({ jsonrpc: '2.0', id: 1, error: { code: -32000, message: 'revert' } }), {
-    status: 200,
-    headers: { 'content-type': 'application/json' },
-  })
+  return new Response(
+    JSON.stringify({ jsonrpc: '2.0', id: 1, error: { code: -32000, message: 'revert' } }),
+    {
+      status: 200,
+      headers: { 'content-type': 'application/json' },
+    },
+  )
 }
 
 // ---- preserved behavior -----------------------------------------------------------

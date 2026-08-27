@@ -15,10 +15,7 @@
  */
 import { test } from 'node:test'
 import assert from 'node:assert/strict'
-import {
-  parsePriceResult,
-  type RpcPriceResult,
-} from '../src/rpc/parsePriceResult.ts'
+import { parsePriceResult, type RpcPriceResult } from '../src/rpc/parsePriceResult.ts'
 
 // ---- helpers ----------------------------------------------------------------
 
@@ -114,7 +111,10 @@ test('rejects a response body that is not an object', () => {
 test('rejects a missing or null result', () => {
   assert.equal(codeOf(parsePriceResult({ jsonrpc: '2.0', id: 1 })), 'missing_result')
   assert.equal(codeOf(parsePriceResult(envelope(null))), 'missing_result')
-  assert.equal(codeOf(parsePriceResult({ jsonrpc: '2.0', id: 1, result: undefined })), 'missing_result')
+  assert.equal(
+    codeOf(parsePriceResult({ jsonrpc: '2.0', id: 1, result: undefined })),
+    'missing_result',
+  )
 })
 
 test('rejects non-string results (negative numbers included)', () => {

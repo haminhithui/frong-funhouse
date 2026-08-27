@@ -239,8 +239,8 @@ test('digests are deterministic per nonce and distinct across nonces', async () 
   const other = 'fedcba9876543210fedcba9876543210'
   assert.equal(await computeChallengeHash(NONCE), await computeChallengeHash(NONCE))
   assert.notEqual(await computeChallengeHash(NONCE), await computeChallengeHash(other))
-  // a one-bit-ish change flips the digest (avalanche / one-wayness smell)
-  const flipped = await computeChallengeHash('0' + NONCE.slice(1))
+  // a one-hex-character change flips the digest (avalanche / one-wayness smell)
+  const flipped = await computeChallengeHash('1' + NONCE.slice(1))
   assert.notEqual(flipped, await computeChallengeHash(NONCE))
 })
 
@@ -287,7 +287,10 @@ class RecordingAuthRepo implements AuthRepo {
     if (this.nextOutcome === 'already_issued') return { outcome: 'already_issued', record }
     return { outcome: 'issued', record }
   }
-  async getChallenge(_id: string, _options?: GetChallengeOptions): Promise<WalletChallengeRecord | null> {
+  async getChallenge(
+    _id: string,
+    _options?: GetChallengeOptions,
+  ): Promise<WalletChallengeRecord | null> {
     throw new Error('not used by these tests')
   }
   async consumeChallenge(_input: ConsumeChallengeInput): Promise<ConsumeChallengeResult> {
@@ -325,8 +328,14 @@ test('issueWalletChallenge persists ONLY the digest + metadata, never the nonce'
   const [call] = repo.issueCalls
   assert.equal(call.player, PLAYER_LOWER, 'persistence sees the lowercased address')
   assert.equal(call.challengeHash, sha256(DRAWN_NONCE), 'persistence sees sha256(nonce)')
-  assert.ok(!JSON.stringify(call).includes(DRAWN_NONCE), 'no repo input field carries the raw nonce')
-  assert.ok(!JSON.stringify(issued.record).includes(DRAWN_NONCE), 'no stored field carries the raw nonce')
+  assert.ok(
+    !JSON.stringify(call).includes(DRAWN_NONCE),
+    'no repo input field carries the raw nonce',
+  )
+  assert.ok(
+    !JSON.stringify(issued.record).includes(DRAWN_NONCE),
+    'no stored field carries the raw nonce',
+  )
 })
 
 test('issueWalletChallenge validates before touching the repo and fails closed', async () => {
@@ -340,10 +349,14 @@ test('issueWalletChallenge validates before touching the repo and fails closed',
 
   repo.nextOutcome = 'already_issued'
   await assert.rejects(
-    issueWalletChallenge(repo, { address: PLAYER_LOWER, chainId: CHAIN_ID }, {
-      randomBytes: drawnBytes,
-      now: () => ISSUE_NOW,
-    }),
+    issueWalletChallenge(
+      repo,
+      { address: PLAYER_LOWER, chainId: CHAIN_ID },
+      {
+        randomBytes: drawnBytes,
+        now: () => ISSUE_NOW,
+      },
+    ),
     ChallengeConflictError,
   )
 })

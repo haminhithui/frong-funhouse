@@ -223,7 +223,10 @@ export interface AuthRepo {
   /** Issue one pending challenge per digest; never a duplicate row. */
   issueChallenge(input: IssueChallengeInput): Promise<IssueChallengeResult>
   /** Read a challenge by opaque id (owner-filtered); lazily expires. */
-  getChallenge(challengeId: string, options?: GetChallengeOptions): Promise<WalletChallengeRecord | null>
+  getChallenge(
+    challengeId: string,
+    options?: GetChallengeOptions,
+  ): Promise<WalletChallengeRecord | null>
   /** One-time consumption guarded on owner, status, expiry, and binding. */
   consumeChallenge(input: ConsumeChallengeInput): Promise<ConsumeChallengeResult>
   /** Issue one active token per digest/challenge/payment; idempotent. */
@@ -341,10 +344,7 @@ const CHALLENGE_STATUSES: readonly WalletChallengeStatus[] = ['pending', 'consum
 const TOKEN_STATUSES: readonly AuthTokenStatus[] = ['active', 'revoked', 'expired']
 
 function readChallengeStatus(value: unknown): WalletChallengeStatus {
-  if (
-    typeof value === 'string' &&
-    (CHALLENGE_STATUSES as readonly string[]).includes(value)
-  ) {
+  if (typeof value === 'string' && (CHALLENGE_STATUSES as readonly string[]).includes(value)) {
     return value as WalletChallengeStatus
   }
   throw new Error(`auth repo: unexpected wallet_challenges.status in row: ${String(value)}`)
@@ -439,9 +439,7 @@ export function createAuthRepo(db: D1DatabaseLike): AuthRepo {
       const at = input.at ?? nowIso()
       const challengeHash = normalizeDigest('challengeHash', input.challengeHash)
       if (isExpiredAt(input.expiresAt, at)) {
-        throw new RangeError(
-          `auth repo: expiresAt (${input.expiresAt}) must be after at (${at})`,
-        )
+        throw new RangeError(`auth repo: expiresAt (${input.expiresAt}) must be after at (${at})`)
       }
       const inserted = await db
         .prepare(INSERT_CHALLENGE_SQL)
@@ -479,7 +477,9 @@ export function createAuthRepo(db: D1DatabaseLike): AuthRepo {
         )
         record =
           transitioned ??
-          toChallengeRecord(await db.prepare(SELECT_CHALLENGE_BY_ID_SQL).bind(challengeId).first()) ??
+          toChallengeRecord(
+            await db.prepare(SELECT_CHALLENGE_BY_ID_SQL).bind(challengeId).first(),
+          ) ??
           record
       }
       return record
@@ -523,9 +523,7 @@ export function createAuthRepo(db: D1DatabaseLike): AuthRepo {
       const at = input.at ?? nowIso()
       const tokenHash = normalizeDigest('tokenHash', input.tokenHash)
       if (isExpiredAt(input.expiresAt, at)) {
-        throw new RangeError(
-          `auth repo: expiresAt (${input.expiresAt}) must be after at (${at})`,
-        )
+        throw new RangeError(`auth repo: expiresAt (${input.expiresAt}) must be after at (${at})`)
       }
       let inserted: Record<string, unknown> | null
       try {
@@ -550,13 +548,19 @@ export function createAuthRepo(db: D1DatabaseLike): AuthRepo {
         // conflict; anything unexplained re-throws.
         if (isUniqueViolationOn(error, 'challenge_id') && input.challengeId) {
           const stored = await classifyTokenBy(
-            db, SELECT_TOKEN_BY_CHALLENGE_SQL, input.challengeId, input.player,
+            db,
+            SELECT_TOKEN_BY_CHALLENGE_SQL,
+            input.challengeId,
+            input.player,
           ).catch(() => null)
           if (stored) return stored
         }
         if (isUniqueViolationOn(error, 'payment_id') && input.paymentId) {
           const stored = await classifyTokenBy(
-            db, SELECT_TOKEN_BY_PAYMENT_SQL, input.paymentId, input.player,
+            db,
+            SELECT_TOKEN_BY_PAYMENT_SQL,
+            input.paymentId,
+            input.player,
           ).catch(() => null)
           if (stored) return stored
         }
@@ -583,9 +587,7 @@ export function createAuthRepo(db: D1DatabaseLike): AuthRepo {
     ): Promise<ResolveTokenResult> {
       const at = options?.at ?? nowIso()
       const digest = normalizeDigest('tokenHash', tokenHash)
-      let record = toTokenRecord(
-        await db.prepare(SELECT_TOKEN_BY_HASH_SQL).bind(digest).first(),
-      )
+      let record = toTokenRecord(await db.prepare(SELECT_TOKEN_BY_HASH_SQL).bind(digest).first())
       if (!record) return { outcome: 'not_found', record: null }
       if (options?.player !== undefined && record.player !== options.player) {
         return { outcome: 'wrong_player', record }
@@ -608,19 +610,14 @@ export function createAuthRepo(db: D1DatabaseLike): AuthRepo {
     async revokeToken(input: { tokenHash: string; at?: string }): Promise<RevokeTokenResult> {
       const at = input.at ?? nowIso()
       const digest = normalizeDigest('tokenHash', input.tokenHash)
-      const updated = await db
-        .prepare(REVOKE_TOKEN_SQL)
-        .bind(at, at, digest)
-        .first()
+      const updated = await db.prepare(REVOKE_TOKEN_SQL).bind(at, at, digest).first()
       if (updated) {
         const record = toTokenRecord(updated)
         if (!record) throw new Error('auth repo: revoke returned an unmappable row')
         return { outcome: 'revoked', record }
       }
       // Guard skipped: explain from the stored row (read-only).
-      const stored = toTokenRecord(
-        await db.prepare(SELECT_TOKEN_BY_HASH_SQL).bind(digest).first(),
-      )
+      const stored = toTokenRecord(await db.prepare(SELECT_TOKEN_BY_HASH_SQL).bind(digest).first())
       if (!stored) return { outcome: 'not_found', record: null }
       if (stored.status === 'revoked') return { outcome: 'already_revoked', record: stored }
       // Only 'expired' remains (an 'active' row would have transitioned).
@@ -663,7 +660,9 @@ async function classifyConsume(
     )
     const record =
       transitioned ??
-      toChallengeRecord(await db.prepare(SELECT_CHALLENGE_BY_ID_SQL).bind(input.challengeId).first()) ??
+      toChallengeRecord(
+        await db.prepare(SELECT_CHALLENGE_BY_ID_SQL).bind(input.challengeId).first(),
+      ) ??
       stored
     return { outcome: 'expired', record }
   }

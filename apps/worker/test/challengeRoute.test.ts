@@ -126,8 +126,7 @@ function fakeEnv(overrides: Partial<Env> = {}): Env {
   }
 }
 
-const sha256 = (value: string): string =>
-  createHash('sha256').update(value).digest('hex')
+const sha256 = (value: string): string => createHash('sha256').update(value).digest('hex')
 
 async function postChallenge(
   env: Env,
@@ -254,9 +253,12 @@ test('invalid address or malformed body is a structured 400 and stores nothing',
 
 test('a failing D1 is a structured 500 with no store detail leaked', async () => {
   const failure = new Error('D1 unavailable: disk I/O error SECRET-DETAIL')
-  const { res, json } = await postChallenge({ ...fakeEnv(), DB: explodingD1(failure) }, {
-    address: PLAYER_LOWER,
-  })
+  const { res, json } = await postChallenge(
+    { ...fakeEnv(), DB: explodingD1(failure) },
+    {
+      address: PLAYER_LOWER,
+    },
+  )
   assert.equal(res.status, 500)
   assert.deepEqual(
     { ok: json.ok, error: json.error },
@@ -285,7 +287,9 @@ test('expiry metadata: pending row whose expires_at is issuedAt + the 5-minute T
   const { res, json } = await postChallenge({ ...fakeEnv(), DB: db }, { address: PLAYER_LOWER })
   assert.equal(res.status, 200)
   const row = storedRow(db)
-  const expectedExpiry = new Date(Date.parse(String(json.issuedAt)) + CHALLENGE_TTL_MS).toISOString()
+  const expectedExpiry = new Date(
+    Date.parse(String(json.issuedAt)) + CHALLENGE_TTL_MS,
+  ).toISOString()
   assert.equal(String(row.expires_at), expectedExpiry)
   assert.equal(String(row.status), 'pending')
   assert.equal(String(row.created_at), String(json.issuedAt))
@@ -314,10 +318,7 @@ test('the raw nonce appears nowhere in any stored row or table', async () => {
   const rows = db.raw('SELECT * FROM wallet_challenges')
   assert.equal(rows.length, 1)
   for (const [column, value] of Object.entries(rows[0])) {
-    assert.ok(
-      !String(value).includes(nonce),
-      `column ${column} must not contain the raw nonce`,
-    )
+    assert.ok(!String(value).includes(nonce), `column ${column} must not contain the raw nonce`)
   }
   const digest = String(rows[0].challenge_hash)
   assert.equal(digest, sha256(nonce))
@@ -342,7 +343,11 @@ test('allowed origin is echoed exactly on POST /api/challenge; others get no all
   assert.equal(allowed.res.headers.get('vary'), 'Origin')
   assert.equal(allowed.res.headers.get('access-control-allow-credentials'), null)
 
-  const disallowed = await postChallenge(env, { address: PLAYER_LOWER }, { origin: DISALLOWED_ORIGIN })
+  const disallowed = await postChallenge(
+    env,
+    { address: PLAYER_LOWER },
+    { origin: DISALLOWED_ORIGIN },
+  )
   assert.equal(disallowed.res.status, 200) // CORS never changed the response itself
   assert.equal(disallowed.res.headers.get('access-control-allow-origin'), null)
 
@@ -384,7 +389,11 @@ test('404 regression: other methods and routes keep their 404', async () => {
     { method: 'GET', path: '/api/challenge' },
     { method: 'PUT', path: '/api/challenge', body: JSON.stringify({ address: PLAYER_LOWER }) },
     { method: 'DELETE', path: '/api/challenge' },
-    { method: 'POST', path: '/api/challenge/extra', body: JSON.stringify({ address: PLAYER_LOWER }) },
+    {
+      method: 'POST',
+      path: '/api/challenge/extra',
+      body: JSON.stringify({ address: PLAYER_LOWER }),
+    },
     { method: 'POST', path: '/api/verify', body: JSON.stringify({ address: PLAYER_LOWER }) },
     { method: 'POST', path: '/api/nope', body: '{}' },
     { method: 'OPTIONS', path: '/api/challenge' }, // bare OPTIONS: no preflight marker
@@ -396,7 +405,11 @@ test('404 regression: other methods and routes keep their 404', async () => {
     )
     assert.equal(res.status, 404, method + ' ' + path)
     assert.deepEqual(await res.json(), { ok: false, error: 'not_found' }, method + ' ' + path)
-    assert.equal(res.headers.get('access-control-allow-origin'), ALLOWED_ORIGIN, method + ' ' + path)
+    assert.equal(
+      res.headers.get('access-control-allow-origin'),
+      ALLOWED_ORIGIN,
+      method + ' ' + path,
+    )
   }
   // nothing was persisted by any of them
   assert.equal(db.raw('SELECT COUNT(*) c FROM wallet_challenges')[0].c, 0)

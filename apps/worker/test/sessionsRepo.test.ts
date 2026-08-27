@@ -147,7 +147,10 @@ test('create persists one active session bound to the consumed payment; get read
   // read back by id, plainly and owner-filtered (clock pinned to the
   // create instant; an unpinned get would run against the real wall clock
   // and correctly lazy-expire this 2026-01-01 fixture)
-  assert.deepEqual(await r.get(res.record.sessionId, { at: '2026-01-01T00:00:00.000Z' }), res.record)
+  assert.deepEqual(
+    await r.get(res.record.sessionId, { at: '2026-01-01T00:00:00.000Z' }),
+    res.record,
+  )
   assert.deepEqual(
     await r.get(res.record.sessionId, { player: PLAYER, at: '2026-01-01T00:05:00.000Z' }),
     res.record,
@@ -211,10 +214,7 @@ test('create caller bugs (bad seed, already-expired) throw and persist nothing',
   await assert.rejects(r.create(createInput({ seed: 1.5 })), TypeError)
   await assert.rejects(r.create(createInput({ expiresAt: '2025-12-31T23:59:59.999Z' })), RangeError)
   // expiry boundary: expires_at == at is already expired
-  await assert.rejects(
-    r.create(createInput({ expiresAt: '2026-01-01T00:00:00.000Z' })),
-    RangeError,
-  )
+  await assert.rejects(r.create(createInput({ expiresAt: '2026-01-01T00:00:00.000Z' })), RangeError)
   assert.equal(db.raw('SELECT COUNT(*) c FROM sessions')[0].c, 0)
 })
 
@@ -255,7 +255,9 @@ test('an active-but-past-expiry session (no prior read) is refused as expired on
   const { repo, created } = await seedActiveSession(db)
   // no get() happened: the row still says 'active' in storage
   assert.equal(db.raw('SELECT status FROM sessions')[0].status, 'active')
-  const res = await repo.consume(consumeInput(created.sessionId, { at: '2026-01-01T00:20:00.000Z' }))
+  const res = await repo.consume(
+    consumeInput(created.sessionId, { at: '2026-01-01T00:20:00.000Z' }),
+  )
   assert.equal(res.outcome, 'expired')
   assert.equal(db.raw('SELECT consumed_at FROM sessions')[0].consumed_at, null)
 })
@@ -289,7 +291,10 @@ test('replay after consume returns already_consumed with first-write-wins stamps
   assert.equal(replay.outcome, 'already_consumed')
   assert.deepEqual(replay.record, first.record)
   assert.equal(replay.record.consumedAt, '2026-01-01T00:05:00.000Z')
-  assert.equal(db.raw('SELECT consumed_at, status FROM sessions')[0].consumed_at, first.record.consumedAt)
+  assert.equal(
+    db.raw('SELECT consumed_at, status FROM sessions')[0].consumed_at,
+    first.record.consumedAt,
+  )
   // reads after consumption keep reporting the consumed record (no lazy expire)
   const got = await repo.get(created.sessionId, { at: '2026-01-01T01:00:00.000Z' })
   assert.equal(got?.status, 'consumed')
@@ -302,7 +307,11 @@ test('25 interleaved consumes: exactly one accepted, rest already_consumed', asy
   const { repo, created } = await seedActiveSession(db)
   const results = await Promise.all(
     Array.from({ length: 25 }, (_, i) =>
-      repo.consume(consumeInput(created.sessionId, { at: `2026-01-01T00:00:${String(i).padStart(2, '0')}.000Z` })),
+      repo.consume(
+        consumeInput(created.sessionId, {
+          at: `2026-01-01T00:00:${String(i).padStart(2, '0')}.000Z`,
+        }),
+      ),
     ),
   )
   const accepted = results.filter((x) => x.outcome === 'accepted')

@@ -245,7 +245,9 @@ export function createLivePriceReader(
 
       if (typeof raw !== 'bigint') {
         return invalidPrice(
-          'price() decoded to ' + (raw === null ? 'null' : typeof raw) + ', expected a uint256 bigint',
+          'price() decoded to ' +
+            (raw === null ? 'null' : typeof raw) +
+            ', expected a uint256 bigint',
         )
       }
       if (raw <= 0n) {

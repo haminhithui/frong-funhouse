@@ -168,7 +168,7 @@ export interface ChallengeAccepted {
  * (loadWorkerConfig allowlists 31337/46630/4663); this is only the
  * structural guard, so the builder never bakes config into pure logic.
  */
-export function isValidChainId(value: unknown): boolean {
+export function isValidChainId(value: unknown): value is number {
   return (
     typeof value === 'number' &&
     Number.isInteger(value) &&
@@ -193,7 +193,11 @@ export function parseChallengeFields(input: unknown): ChallengeAccepted | Challe
   const { address, chainId, nonce, issuedAt, expiresAt } = input as Record<string, unknown>
 
   if (typeof address !== 'string' || !isValidWalletAddress(address)) {
-    return { ok: false, reason: 'invalid_address', detail: `not a wallet address: ${String(address)}` }
+    return {
+      ok: false,
+      reason: 'invalid_address',
+      detail: `not a wallet address: ${String(address)}`,
+    }
   }
   if (!isValidChainId(chainId)) {
     return { ok: false, reason: 'invalid_chain_id', detail: `not a chain id: ${String(chainId)}` }
@@ -202,10 +206,18 @@ export function parseChallengeFields(input: unknown): ChallengeAccepted | Challe
     return { ok: false, reason: 'empty_nonce', detail: 'nonce must be a non-empty string' }
   }
   if (typeof issuedAt !== 'string' || Number.isNaN(Date.parse(issuedAt))) {
-    return { ok: false, reason: 'invalid_issued_at', detail: `not an ISO-8601 instant: ${String(issuedAt)}` }
+    return {
+      ok: false,
+      reason: 'invalid_issued_at',
+      detail: `not an ISO-8601 instant: ${String(issuedAt)}`,
+    }
   }
   if (typeof expiresAt !== 'string' || Number.isNaN(Date.parse(expiresAt))) {
-    return { ok: false, reason: 'invalid_expires_at', detail: `not an ISO-8601 instant: ${String(expiresAt)}` }
+    return {
+      ok: false,
+      reason: 'invalid_expires_at',
+      detail: `not an ISO-8601 instant: ${String(expiresAt)}`,
+    }
   }
   if (Date.parse(expiresAt) <= Date.parse(issuedAt)) {
     return {
@@ -223,8 +235,7 @@ export function parseChallengeFields(input: unknown): ChallengeAccepted | Challe
 
 /** Result of the pure, sync message builder. */
 export type ChallengeMessageResult =
-  | { ok: true; message: string; fields: ChallengeFields }
-  | ChallengeRejected
+  { ok: true; message: string; fields: ChallengeFields } | ChallengeRejected
 
 /**
  * Pure message construction: validate the deterministic fields (normalizing
@@ -380,5 +391,11 @@ export async function issueWalletChallenge(
   })
   if (result.outcome !== 'issued') throw new ChallengeConflictError(result.outcome)
 
-  return { nonce, message: built.message, issuedAt: built.issuedAt, expiresAt: built.expiresAt, record: result.record }
+  return {
+    nonce,
+    message: built.message,
+    issuedAt: built.issuedAt,
+    expiresAt: built.expiresAt,
+    record: result.record,
+  }
 }

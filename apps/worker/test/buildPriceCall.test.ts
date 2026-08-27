@@ -119,11 +119,7 @@ test('does not mutate or normalize the input address', () => {
 
 test('rejects non-string inputs', () => {
   for (const bad of [undefined, null, 42, true, {}, ['0x' + '1'.repeat(40)]]) {
-    assert.equal(
-      codeOf(buildPriceCallRequest(bad)),
-      'invalid_address',
-      'input: ' + String(bad),
-    )
+    assert.equal(codeOf(buildPriceCallRequest(bad)), 'invalid_address', 'input: ' + String(bad))
   }
 })
 
@@ -140,23 +136,14 @@ test('rejects addresses that are not exactly 40 hex digits', () => {
 })
 
 test('rejects non-hex digits inside the address', () => {
-  assert.equal(
-    codeOf(buildPriceCallRequest('0x' + 'z'.repeat(40))),
-    'invalid_address',
-  )
-  assert.equal(
-    codeOf(buildPriceCallRequest('0x' + 'g'.repeat(40))),
-    'invalid_address',
-  )
+  assert.equal(codeOf(buildPriceCallRequest('0x' + 'z'.repeat(40))), 'invalid_address')
+  assert.equal(codeOf(buildPriceCallRequest('0x' + 'g'.repeat(40))), 'invalid_address')
 })
 
 test('rejects padded or whitespace-wrapped addresses', () => {
   assert.equal(codeOf(buildPriceCallRequest(' ' + FIXTURE_ENTRY)), 'invalid_address')
   assert.equal(codeOf(buildPriceCallRequest(FIXTURE_ENTRY + '\n')), 'invalid_address')
-  assert.equal(
-    codeOf(buildPriceCallRequest('0x0x' + '1'.repeat(40))),
-    'invalid_address',
-  )
+  assert.equal(codeOf(buildPriceCallRequest('0x0x' + '1'.repeat(40))), 'invalid_address')
 })
 
 test('rejects the all-zero address', () => {

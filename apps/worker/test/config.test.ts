@@ -104,7 +104,10 @@ test('missing address is reported per key (all three at once)', () => {
   assert.equal(res.ok, false)
   const problems = problemsOf(res)
   for (const key of ['FRONG_ADDRESS', 'ENTRY_ADDRESS', 'TROPHY_ADDRESS']) {
-    assert.ok(problems.some((p) => p.startsWith(key + ' ')), `problem for ${key}`)
+    assert.ok(
+      problems.some((p) => p.startsWith(key + ' ')),
+      `problem for ${key}`,
+    )
   }
   assert.equal(problems.length, 3)
 })
@@ -130,11 +133,15 @@ test('chain id outside 46630/4663 (and 31337) is rejected', () => {
 test('staging on mainnet 4663 and production on testnet 46630 are rejected', () => {
   const stagingOnMainnet = loadWorkerConfig(stagingEnv({ CHAIN_ID: '4663', NETWORK: 'mainnet' }))
   assert.equal(stagingOnMainnet.ok, false)
-  assert.ok(problemsOf(stagingOnMainnet).includes('APP_ENV staging requires CHAIN_ID 46630 (testnet)'))
+  assert.ok(
+    problemsOf(stagingOnMainnet).includes('APP_ENV staging requires CHAIN_ID 46630 (testnet)'),
+  )
 
   const prodOnTestnet = loadWorkerConfig(productionEnv({ CHAIN_ID: '46630', NETWORK: 'testnet' }))
   assert.equal(prodOnTestnet.ok, false)
-  assert.ok(problemsOf(prodOnTestnet).includes('APP_ENV production requires CHAIN_ID 4663 (mainnet)'))
+  assert.ok(
+    problemsOf(prodOnTestnet).includes('APP_ENV production requires CHAIN_ID 4663 (mainnet)'),
+  )
 })
 
 test('NETWORK label must match the chain when set', () => {
@@ -156,19 +163,19 @@ test('non-URL and non-http(s) RPC endpoints are rejected', () => {
 test('a real chain (46630/4663) requires a public https RPC: plain http and loopback are rejected', () => {
   const http = loadWorkerConfig(stagingEnv({ RPC_URL: 'http://rpc-fixture.test.example' }))
   assert.equal(http.ok, false)
-  assert.ok(
-    problemsOf(http).includes('RPC_URL for a real chain must be a public https:// URL'),
-  )
+  assert.ok(problemsOf(http).includes('RPC_URL for a real chain must be a public https:// URL'))
 
   const loopback = loadWorkerConfig(productionEnv({ RPC_URL: 'https://localhost:8545' }))
   assert.equal(loopback.ok, false)
-  assert.ok(
-    problemsOf(loopback).includes('RPC_URL for a real chain must be a public https:// URL'),
-  )
+  assert.ok(problemsOf(loopback).includes('RPC_URL for a real chain must be a public https:// URL'))
 })
 
 test('local dev (31337) keeps http + loopback RPC available, but never mainnet', () => {
-  const localEnv = stagingEnv({ APP_ENV: 'local', CHAIN_ID: '31337', RPC_URL: 'http://localhost:8545' })
+  const localEnv = stagingEnv({
+    APP_ENV: 'local',
+    CHAIN_ID: '31337',
+    RPC_URL: 'http://localhost:8545',
+  })
   delete localEnv.NETWORK
   const local = loadWorkerConfig(localEnv)
   assert.ok(local.ok)
@@ -191,8 +198,19 @@ test('empty bindings fail closed listing every required var', () => {
   const res = loadWorkerConfig({})
   assert.equal(res.ok, false)
   const problems = problemsOf(res)
-  for (const prefix of ['APP_ENV ', 'CHAIN_ID ', 'RPC_URL ', 'FRONG_ADDRESS ', 'ENTRY_ADDRESS ', 'TROPHY_ADDRESS ', 'BUILD_HASH ']) {
-    assert.ok(problems.some((p) => p.startsWith(prefix)), `problem for ${prefix}`)
+  for (const prefix of [
+    'APP_ENV ',
+    'CHAIN_ID ',
+    'RPC_URL ',
+    'FRONG_ADDRESS ',
+    'ENTRY_ADDRESS ',
+    'TROPHY_ADDRESS ',
+    'BUILD_HASH ',
+  ]) {
+    assert.ok(
+      problems.some((p) => p.startsWith(prefix)),
+      `problem for ${prefix}`,
+    )
   }
   // defaults are still well-formed (they were never the failure)
   assert.ok(!problems.some((p) => p.startsWith('COUNTDOWN_TICKS')))
@@ -223,8 +241,16 @@ test('pure and injectable: deterministic, does not mutate the injected env, igno
   // A fully populated process.env must not leak into an empty binding set:
   // the helper reads only what the caller injects.
   const keys = [
-    'APP_ENV', 'ENVIRONMENT', 'NETWORK', 'CHAIN_ID', 'RPC_URL',
-    'FRONG_ADDRESS', 'ENTRY_ADDRESS', 'TROPHY_ADDRESS', 'BUILD_HASH', 'FEE_AMOUNT_WEI',
+    'APP_ENV',
+    'ENVIRONMENT',
+    'NETWORK',
+    'CHAIN_ID',
+    'RPC_URL',
+    'FRONG_ADDRESS',
+    'ENTRY_ADDRESS',
+    'TROPHY_ADDRESS',
+    'BUILD_HASH',
+    'FEE_AMOUNT_WEI',
   ] as const
   const saved = Object.fromEntries(keys.map((k) => [k, process.env[k]]))
   try {

@@ -214,7 +214,10 @@ export function createPaymentsRepo(db: D1DatabaseLike): PaymentsRepo {
       ]
       let inserted: Record<string, unknown> | null
       try {
-        inserted = await db.prepare(UPSERT_SQL).bind(...params).first()
+        inserted = await db
+          .prepare(UPSERT_SQL)
+          .bind(...params)
+          .first()
       } catch (error) {
         // The (player, payment_id) unique is outside the ON CONFLICT target.
         // Classify from stored rows; re-throw unless a STORED ROW explains the

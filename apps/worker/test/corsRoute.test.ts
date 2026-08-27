@@ -94,7 +94,7 @@ test('allowed origin is echoed exactly with Vary: Origin on /health', async () =
 })
 
 test('allowed origin rides along on /api/config without changing its behavior', async () => {
-  const { res, body, calls } = (await (async () => {
+  const { res, body, calls } = await (async () => {
     const { fetchImpl, calls } = recordingFetch()
     const handler = createFetchHandler({ fetchImpl })
     const res = await handler.fetch(
@@ -102,7 +102,7 @@ test('allowed origin rides along on /api/config without changing its behavior', 
       FAKE_ENV,
     )
     return { res, body: (await res.json()) as Record<string, unknown>, calls }
-  })())
+  })()
 
   assert.equal(res.status, 200)
   assert.equal(res.headers.get('access-control-allow-origin'), OTHER_ALLOWED_ORIGIN)

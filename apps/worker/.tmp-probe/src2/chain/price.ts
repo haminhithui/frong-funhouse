@@ -65,7 +65,10 @@ function isHexQuantity(value: unknown): value is string {
 }
 
 /** Create the live-price reader bound to one RPC endpoint. */
-export function createEntryPriceReader(rpcUrl: string, options: PriceReaderOptions = {}): EntryPriceReader {
+export function createEntryPriceReader(
+  rpcUrl: string,
+  options: PriceReaderOptions = {},
+): EntryPriceReader {
   const doFetch = options.fetchImpl ?? ((input, init) => fetch(input, init))
   const timeoutMs = options.timeoutMs ?? 10_000
 
@@ -117,10 +120,7 @@ export function createEntryPriceReader(rpcUrl: string, options: PriceReaderOptio
 
       const result = payload.result
       if (!isHexQuantity(result)) {
-        throw new EntryPriceError(
-          'entry price RPC returned a non-hex result',
-          'rpc_invalid_result',
-        )
+        throw new EntryPriceError('entry price RPC returned a non-hex result', 'rpc_invalid_result')
       }
       if (result === '0x') {
         throw new EntryPriceError(
@@ -131,10 +131,7 @@ export function createEntryPriceReader(rpcUrl: string, options: PriceReaderOptio
       if (result.length > 66) {
         // uint256 is at most 32 bytes (0x + 64 nibbles); anything longer can
         // never be a valid price.
-        throw new EntryPriceError(
-          'entry price RPC result exceeds uint256',
-          'rpc_overflow_result',
-        )
+        throw new EntryPriceError('entry price RPC result exceeds uint256', 'rpc_overflow_result')
       }
 
       return BigInt(result)

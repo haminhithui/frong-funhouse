@@ -155,9 +155,7 @@ test('25 interleaved consume attempts: exactly one accepted, rest already_consum
   for (const c of consumed) assert.deepEqual(c.record, accepted[0].record)
   assert.equal(db.raw('SELECT COUNT(*) c FROM payments')[0].c, 1)
   // the winning consumed_at belongs to the single accepted call
-  const stored = rowToRecord(
-    (db.raw('SELECT * FROM payments') as Record<string, unknown>[])[0],
-  )
+  const stored = rowToRecord((db.raw('SELECT * FROM payments') as Record<string, unknown>[])[0])
   assert.equal(stored.consumedAt, accepted[0].record.consumedAt)
 })
 
