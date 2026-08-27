@@ -1,0 +1,109 @@
+{
+  "name": "frong-catch-worker",
+  "main": "src/index.ts",
+  "compatibility_date": "2026-08-23",
+  "d1_databases": [
+    {
+      "binding": "DB",
+      "database_name": "frong-catch-local",
+      "database_id": "REPLACE_WITH_D1_DATABASE_ID_LOCAL"
+    }
+  ],
+  "vars": {
+    "ENVIRONMENT": "local",
+    "APP_ENV": "local",
+    "BUILD_HASH": "",
+    "NETWORK": "testnet",
+    "CHAIN_ID": "46630",
+    "RPC_URL": "https://rpc.testnet.chain.robinhood.com/rpc",
+    "EXPLORER_URL": "https://explorer.testnet.chain.robinhood.com",
+    "CONFIRMATIONS": "1",
+    "SESSION_TTL_MS": "600000",
+    "AUTH_TTL_MS": "1800000",
+    "RATE_LIMIT_PER_MIN": "30",
+    "RATE_LIMIT_BURST": "60",
+    "CHALLENGE_RATE_PER_MIN": "10",
+    "CORS_ORIGINS": "",
+    "METADATA_BASE_URL": "",
+    "FRONG_ADDRESS": "",
+    "ENTRY_ADDRESS": "",
+    "TROPHY_ADDRESS": "",
+    "PRIVY_APP_ID": "",
+    "PINATA_GATEWAY": "",
+    "KMS_REGION": "",
+    "KMS_KEY_ID": "",
+    "KMS_MINTER_ADDRESS": ""
+  },
+  "env": {
+    "staging": {
+      "name": "frong-catch-worker-staging",
+      "d1_databases": [
+        {
+          "binding": "DB",
+          "database_name": "frong-catch-staging",
+          "database_id": "REPLACE_WITH_D1_DATABASE_ID_STAGING"
+        }
+      ],
+      "vars": {
+        "ENVIRONMENT": "staging",
+        "APP_ENV": "staging",
+        "BUILD_HASH": "",
+        "NETWORK": "testnet",
+        "CHAIN_ID": "46630",
+        "RPC_URL": "https://rpc.testnet.chain.robinhood.com/rpc",
+        "EXPLORER_URL": "https://explorer.testnet.chain.robinhood.com",
+        "CONFIRMATIONS": "1",
+        "SESSION_TTL_MS": "600000",
+        "AUTH_TTL_MS": "1800000",
+        "RATE_LIMIT_PER_MIN": "30",
+        "RATE_LIMIT_BURST": "60",
+        "CHALLENGE_RATE_PER_MIN": "10",
+        "CORS_ORIGINS": "",
+        "METADATA_BASE_URL": "",
+        "FRONG_ADDRESS": "",
+        "ENTRY_ADDRESS": "",
+        "TROPHY_ADDRESS": "",
+        "PRIVY_APP_ID": "",
+        "PINATA_GATEWAY": "",
+        "KMS_REGION": "",
+        "KMS_KEY_ID": "",
+        "KMS_MINTER_ADDRESS": ""
+      }
+    },
+    "production": {
+      "name": "frong-catch-worker-production",
+      "d1_databases": [
+        {
+          "binding": "DB",
+          "database_name": "frong-catch-production",
+          "database_id": "REPLACE_WITH_D1_DATABASE_ID_PRODUCTION"
+        }
+      ],
+      "vars": {
+        "ENVIRONMENT": "production",
+        "APP_ENV": "production",
+        "BUILD_HASH": "",
+        "NETWORK": "mainnet",
+        "CHAIN_ID": "4663",
+        "RPC_URL": "",
+        "EXPLORER_URL": "",
+        "CONFIRMATIONS": "1",
+        "SESSION_TTL_MS": "600000",
+        "AUTH_TTL_MS": "1800000",
+        "RATE_LIMIT_PER_MIN": "30",
+        "RATE_LIMIT_BURST": "60",
+        "CHALLENGE_RATE_PER_MIN": "10",
+        "CORS_ORIGINS": "",
+        "METADATA_BASE_URL": "",
+        "FRONG_ADDRESS": "",
+        "ENTRY_ADDRESS": "",
+        "TROPHY_ADDRESS": "",
+        "PRIVY_APP_ID": "",
+        "PINATA_GATEWAY": "",
+        "KMS_REGION": "",
+        "KMS_KEY_ID": "",
+        "KMS_MINTER_ADDRESS": ""
+      }
+    }
+  }
+}
