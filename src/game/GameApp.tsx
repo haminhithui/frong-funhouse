@@ -224,17 +224,61 @@ export default function GameApp({ durationTicks, countdownTicks, labelledBy }: G
           ref={attractRef}
           className={arcade.attract + ' ' + arcade.screenIn}
           tabIndex={-1}
+          role="region"
+          aria-label="FRONG Catch briefing"
           aria-labelledby={labelledBy}
+          data-surface="frong-catch"
         >
-          {labelledBy ? null : (
-            <h3 className={arcade.title}>
-              FRONG <span className={arcade.accent}>Catch</span>
-            </h3>
-          )}
-          <p className={arcade.lede}>
-            One minute. Forty-five flies. Move FRONG&apos;s lily pad and catch what falls — the
-            rarer the fly, the more points. A perfect run is 109.
-          </p>
+          <div className={arcade.attractHero}>
+            <div className={arcade.attractCopy}>
+              <div className={arcade.kicker} aria-hidden="true">
+                <span>ARCADE / 01</span>
+                <span className={arcade.kickerRule} />
+                <span>REFLEX TEST</span>
+              </div>
+              {labelledBy ? null : (
+                <h3 className={arcade.title}>
+                  FRONG <span className={arcade.accent}>Catch</span>
+                </h3>
+              )}
+              <p className={arcade.lede}>
+                Read the fall. Slide the pad. Build a perfect minute before the pond goes quiet.
+              </p>
+              <div className={arcade.heroCallout}>
+                <span className={arcade.heroCalloutDot} aria-hidden="true" />
+                <span>
+                  <strong>MISSION</strong> Catch the rarest fly you can.
+                </span>
+              </div>
+            </div>
+            <div className={arcade.attractArt}>
+              <span className={arcade.artOrbit + ' ' + arcade.artOrbitOne} aria-hidden="true" />
+              <span className={arcade.artOrbit + ' ' + arcade.artOrbitTwo} aria-hidden="true" />
+              <span className={arcade.artCrosshair} aria-hidden="true" />
+              <img className={arcade.attractMascot} src="/assets/avatar.png" alt="FRONG mascot" />
+              <span className={arcade.artCaption}>POND SIGNAL / 01</span>
+            </div>
+          </div>
+
+          <div className={arcade.runFacts} aria-label="Run facts">
+            <div className={arcade.runFact}>
+              <span className={arcade.runFactValue}>60 SEC RUN</span>
+              <span className={arcade.runFactLabel}>One clean minute</span>
+            </div>
+            <div className={arcade.runFact}>
+              <span className={arcade.runFactValue}>45 TARGETS</span>
+              <span className={arcade.runFactLabel}>Every fall counts</span>
+            </div>
+            <div className={arcade.runFact}>
+              <span className={arcade.runFactValue}>109 PERFECT</span>
+              <span className={arcade.runFactLabel}>The pond&apos;s top mark</span>
+            </div>
+          </div>
+
+          <div className={arcade.sectionHeading}>
+            <span>READ THE WATER</span>
+            <span>5 species / 6 tiers</span>
+          </div>
           <ul className={arcade.legend} aria-label="Fly types and points">
             {FLY_TYPES.map((fly) => (
               <li key={fly.id} className={arcade.legendItem}>
@@ -245,6 +289,15 @@ export default function GameApp({ durationTicks, countdownTicks, labelledBy }: G
               </li>
             ))}
           </ul>
+
+          <div className={arcade.sectionHeading}>
+            <span>CLIMB THE LADDER</span>
+            {best > 0 && bestTierName !== null ? (
+              <span>PERSONAL BEST / {bestTierName.toUpperCase()}</span>
+            ) : (
+              <span>LOCAL SCOREBOARD</span>
+            )}
+          </div>
           <ul className={arcade.tiers} aria-label="Score tiers">
             {TIERS.map((tier, index) => (
               <li
@@ -285,20 +338,34 @@ export default function GameApp({ durationTicks, countdownTicks, labelledBy }: G
           ref={runRef}
           tabIndex={-1}
           aria-label="Game run"
+          data-surface="frong-catch"
+          data-phase={hud.phase}
         >
+          <div className={arcade.runTopline}>
+            <div className={arcade.runIdentity}>
+              <span className={arcade.runCode}>FRONG / CATCH</span>
+              <span className={arcade.runSubcode}>PRACTICE FIELD</span>
+            </div>
+            <span className={arcade.liveBadge}>
+              <span className={arcade.liveDot} aria-hidden="true" />
+              LIVE RUN
+            </span>
+          </div>
           <div className={arcade.hud}>
             <div className={arcade.hudStats}>
-              <span className={arcade.hudStat}>
-                Score{' '}
+              <span className={arcade.hudStat + ' ' + arcade.hudStatScore}>
+                <span className={arcade.hudLabel}>Score</span>
                 <strong key={hud.score} className={arcade.hudStrong + ' ' + arcade.hudStrongPop}>
                   {hud.score}
                 </strong>
               </span>
-              <span className={arcade.hudStat}>
-                Flies <strong className={arcade.hudStrong}>{hud.caught}/45</strong>
+              <span className={arcade.hudStat + ' ' + arcade.hudStatFlies}>
+                <span className={arcade.hudLabel}>Flies</span>
+                <strong className={arcade.hudStrong}>{hud.caught}/45</strong>
               </span>
-              <span className={timeStatClass}>
-                Time <strong className={arcade.hudStrong}>{hud.timeLeft}s</strong>
+              <span className={timeStatClass + ' ' + arcade.hudStatTime}>
+                <span className={arcade.hudLabel}>Time</span>
+                <strong className={arcade.hudStrong}>{hud.timeLeft}s</strong>
               </span>
             </div>
             <button
@@ -313,8 +380,16 @@ export default function GameApp({ durationTicks, countdownTicks, labelledBy }: G
               </svg>
             </button>
           </div>
-          <div className={arcade.progress} aria-hidden="true">
-            <div className={arcade.progressTrack}>
+          <div
+            className={arcade.progress}
+            role="progressbar"
+            aria-label="Progress to next tier"
+            aria-valuemin={0}
+            aria-valuemax={100}
+            aria-valuenow={progressPct}
+            aria-valuetext={hudNextTier ? progressPct + '% to ' + hudNextTier.name : 'Perfect run'}
+          >
+            <div className={arcade.progressTrack} aria-hidden="true">
               <div className={arcade.progressFill} style={{ width: progressPct + '%' }} />
             </div>
             <div className={arcade.progressMeta}>
@@ -382,17 +457,54 @@ export default function GameApp({ durationTicks, countdownTicks, labelledBy }: G
               </div>
             )}
           </div>
+          <p className={arcade.runHint}>
+            <span>STEER THE PAD</span> Mouse, touch, or <kbd className="kbd">←</kbd>{' '}
+            <kbd className="kbd">→</kbd> · <kbd className="kbd">P</kbd> pauses
+          </p>
         </div>
       )}
 
       {screen === 'results' && result !== null && tierName !== null && (
-        <div className={arcade.results + ' ' + arcade.screenIn} aria-labelledby="results-title">
-          <p className="eyebrow">Run over</p>
-          <h3 id="results-title" ref={resultsRef} tabIndex={-1} className={arcade.resultTier}>
-            {tierName}
-          </h3>
+        <div
+          className={arcade.results + ' ' + arcade.screenIn}
+          aria-labelledby="results-title"
+          role="region"
+          data-surface="frong-catch"
+        >
+          <div className={arcade.resultsTopline}>
+            <p className="eyebrow">Run over / field report</p>
+            <span className={arcade.resultStamp}>{beatBest ? 'NEW BEST' : 'PRACTICE LOG'}</span>
+          </div>
+          <div className={arcade.resultHero}>
+            <div className={arcade.resultTierBlock}>
+              <span className={arcade.resultLabel}>FINAL TIER</span>
+              <h3 id="results-title" ref={resultsRef} tabIndex={-1} className={arcade.resultTier}>
+                {tierName}
+              </h3>
+              <p className={arcade.flavor}>{TIER_FLAVOR[tierName]}</p>
+            </div>
+            <div className={arcade.resultScoreBlock}>
+              <span className={arcade.resultLabel}>FINAL SCORE</span>
+              <strong className={arcade.resultScore} aria-label={result.score + ' out of 109'}>
+                {result.score}
+                <small>of 109 max</small>
+              </strong>
+              <div
+                className={arcade.resultScoreTrack}
+                role="progressbar"
+                aria-label="Final score progress"
+                aria-valuemin={0}
+                aria-valuemax={109}
+                aria-valuenow={Math.min(result.score, 109)}
+              >
+                <span
+                  className={arcade.resultScoreFill}
+                  style={{ width: Math.round(clamp01(result.score / 109) * 100) + '%' }}
+                />
+              </div>
+            </div>
+          </div>
           {beatBest && <p className={arcade.newBest}>New best score</p>}
-          <p className={arcade.flavor}>{TIER_FLAVOR[tierName]}</p>
           <dl className={arcade.stats}>
             <div className={arcade.stat}>
               <dt>Score</dt>
@@ -417,6 +529,10 @@ export default function GameApp({ durationTicks, countdownTicks, labelledBy }: G
               <dd className={arcade.statValue}>{best}</dd>
             </div>
           </dl>
+          <div className={arcade.sectionHeading}>
+            <span>RUN RANKING</span>
+            <span>CAUGHT {result.caught} OF 45</span>
+          </div>
           <ul className={arcade.tiers} aria-label="Score tiers">
             {TIERS.map((tier, index) => (
               <li

@@ -10,12 +10,13 @@ import type { Fly, FlyTypeId, GameState } from './sim/types'
  * suppressed under reduced motion; gameplay motion is never touched.
  */
 const COLORS = {
-  waterTop: '#142018',
-  waterMid: '#0f1713',
-  waterBottom: '#0b0d0c',
+  waterTop: '#18362f',
+  waterMid: '#102a25',
+  waterBottom: '#080f0e',
+  waterGlow: 'rgba(83, 148, 134, 0.18)',
   waterLine: 'rgba(185, 239, 131, 0.35)',
   pad: '#1d2a22',
-  padHighlight: '#27402e',
+  padHighlight: '#31583c',
   padRing: 'rgba(185, 239, 131, 0.28)',
   ink: '#ece7dc',
   accent: '#9cdb62',
@@ -73,15 +74,58 @@ export function renderGame(
 function drawWater(ctx: CanvasRenderingContext2D, w: number, h: number): void {
   const gradient = ctx.createLinearGradient(0, 0, 0, h)
   gradient.addColorStop(0, COLORS.waterTop)
-  gradient.addColorStop(0.55, COLORS.waterMid)
+  gradient.addColorStop(0.42, COLORS.waterMid)
   gradient.addColorStop(1, COLORS.waterBottom)
   ctx.fillStyle = gradient
   ctx.fillRect(0, 0, w, h)
 
+  // A broad central pool keeps the play space readable without flattening the water.
+  const pool = ctx.createRadialGradient(w * 0.5, h * 0.34, 0, w * 0.5, h * 0.34, h * 0.78)
+  pool.addColorStop(0, COLORS.waterGlow)
+  pool.addColorStop(0.58, 'rgba(83, 148, 134, 0.035)')
+  pool.addColorStop(1, 'rgba(8, 15, 14, 0)')
+  ctx.fillStyle = pool
+  ctx.fillRect(0, 0, w, h)
+
+  // Quiet contour lines make the water feel wide and layered at game scale.
+  ctx.save()
+  ctx.lineCap = 'round'
+  for (let i = 0; i < 10; i += 1) {
+    const y = 34 + i * ((h - 88) / 9)
+    ctx.globalAlpha = i % 3 === 0 ? 0.11 : 0.055
+    ctx.strokeStyle = i % 2 === 0 ? COLORS.accentBright : '#6ea8c9'
+    ctx.lineWidth = i % 3 === 0 ? 1.25 : 0.75
+    ctx.beginPath()
+    ctx.moveTo(-20, y)
+    for (let segment = 0; segment <= 8; segment += 1) {
+      const x = (segment / 8) * (w + 40) - 20
+      const wave = 4 * dsin(segment * 1.65 + i * 0.8)
+      ctx.lineTo(x, y + wave)
+    }
+    ctx.stroke()
+  }
+  ctx.globalAlpha = 0.08
+  ctx.strokeStyle = COLORS.accentBright
+  ctx.lineWidth = 1
+  for (let i = 0; i < 5; i += 1) {
+    ctx.beginPath()
+    ctx.ellipse(
+      w * (0.12 + i * 0.19),
+      h * (0.22 + (i % 2) * 0.18),
+      22 + i * 5,
+      5,
+      -0.12,
+      0,
+      Math.PI * 2,
+    )
+    ctx.stroke()
+  }
+  ctx.restore()
+
   // Vignette: gently darken the edges for depth.
   const vignette = ctx.createRadialGradient(w / 2, h / 2, h * 0.35, w / 2, h / 2, h * 0.85)
   vignette.addColorStop(0, 'rgba(0, 0, 0, 0)')
-  vignette.addColorStop(1, 'rgba(0, 0, 0, 0.34)')
+  vignette.addColorStop(1, 'rgba(0, 0, 0, 0.4)')
   ctx.fillStyle = vignette
   ctx.fillRect(0, 0, w, h)
 }
@@ -92,15 +136,63 @@ function drawAmbience(ctx: CanvasRenderingContext2D, state: GameState, reduced: 
   const rng = createRng((state.seed ^ 0xa5f1c9) >>> 0)
 
   // Distant lily pads — static scenery with a slow bob under full motion.
-  for (let i = 0; i < 3; i += 1) {
-    const px = 44 + rng() * (w - 88)
-    const py = 64 + rng() * h * 0.3
-    const pr = 13 + rng() * 10
+  for (let i = 0; i < 4; i += 1) {
+    const px = 34 + rng() * (w - 68)
+    const py = 58 + rng() * h * 0.32
+    const pr = 12 + rng() * 11
     const bob = reduced ? 0 : 5 * dsin(state.tick / 240 + i * 0.37)
-    ctx.fillStyle = 'rgba(29, 42, 34, 0.55)'
+    ctx.save()
+    ctx.fillStyle = 'rgba(29, 42, 34, 0.68)'
+    ctx.strokeStyle = 'rgba(185, 239, 131, 0.12)'
+    ctx.lineWidth = 1
     ctx.beginPath()
     ctx.ellipse(px + bob, py, pr, pr * 0.42, 0.4, 0, Math.PI * 2)
     ctx.fill()
+    ctx.stroke()
+    ctx.strokeStyle = 'rgba(49, 88, 60, 0.7)'
+    ctx.beginPath()
+    ctx.moveTo(px + bob - pr * 0.7, py + pr * 0.08)
+    ctx.lineTo(px + bob + pr * 0.65, py - pr * 0.12)
+    ctx.stroke()
+    ctx.restore()
+  }
+
+  // A few distant reeds frame the lower waterline without covering the player.
+  ctx.save()
+  ctx.strokeStyle = 'rgba(8, 15, 14, 0.72)'
+  ctx.lineWidth = 2
+  ctx.lineCap = 'round'
+  for (let i = 0; i < 9; i += 1) {
+    const x = (i + 0.5) * (w / 9)
+    const reedHeight = 18 + ((i * 17) % 28)
+    ctx.beginPath()
+    ctx.moveTo(x, h)
+    ctx.quadraticCurveTo(
+      x - 4 + (i % 2) * 8,
+      h - reedHeight * 0.55,
+      x + (i % 2 ? 5 : -5),
+      h - reedHeight,
+    )
+    ctx.stroke()
+  }
+  ctx.restore()
+
+  // Firefly beacons add a second, warmer layer of depth around the targets.
+  const fireflyRng = createRng((state.seed ^ 0x37d24a) >>> 0)
+  for (let i = 0; i < 12; i += 1) {
+    const fx = 24 + fireflyRng() * (w - 48)
+    const fy = 28 + fireflyRng() * (h * 0.62)
+    const drift = reduced ? 0 : 3 * dsin(state.tick / 85 + i * 0.73)
+    const pulse = reduced ? 1 : 0.7 + 0.3 * (0.5 + 0.5 * dsin(state.tick / 18 + i))
+    ctx.save()
+    ctx.globalAlpha = 0.18 * pulse
+    ctx.fillStyle = COLORS.firefly
+    ctx.shadowColor = COLORS.firefly
+    ctx.shadowBlur = reduced ? 0 : 8
+    ctx.beginPath()
+    ctx.arc(fx + drift, fy, 1.4 + pulse * 0.7, 0, Math.PI * 2)
+    ctx.fill()
+    ctx.restore()
   }
 
   // Rising bubbles.
@@ -113,10 +205,11 @@ function drawAmbience(ctx: CanvasRenderingContext2D, state: GameState, reduced: 
       const wobble = 5 * dsin(state.tick / 90 + phase * 2)
       const radius = 2 + rng() * 3
       ctx.globalAlpha = 0.04 + 0.05 * (0.5 + 0.5 * dsin(state.tick / 60 + i))
-      ctx.fillStyle = COLORS.accentBright
+      ctx.strokeStyle = COLORS.accentBright
+      ctx.lineWidth = 1
       ctx.beginPath()
       ctx.arc(bx + wobble, y, radius, 0, Math.PI * 2)
-      ctx.fill()
+      ctx.stroke()
     }
     ctx.globalAlpha = 1
   }
@@ -207,25 +300,56 @@ function drawPadAndFrong(
   const padY = PADDLE_Y + PADDLE_HEIGHT / 2 + 12
   const bob = reduced ? 0 : 1.5 * dsin(state.tick / 26)
 
-  ctx.fillStyle = COLORS.pad
+  ctx.save()
+  const padGradient = ctx.createRadialGradient(
+    state.paddleX - 12,
+    padY - 6 + bob,
+    2,
+    state.paddleX,
+    padY + bob,
+    PADDLE_WIDTH / 2 + 22,
+  )
+  padGradient.addColorStop(0, COLORS.padHighlight)
+  padGradient.addColorStop(1, COLORS.pad)
+  ctx.shadowColor = 'rgba(0, 0, 0, 0.6)'
+  ctx.shadowBlur = 14
+  ctx.fillStyle = padGradient
   ctx.strokeStyle = COLORS.padRing
   ctx.lineWidth = 2
   ctx.beginPath()
   ctx.ellipse(state.paddleX, padY + bob, PADDLE_WIDTH / 2 + 16, 16, 0, 0, Math.PI * 2)
   ctx.fill()
+  ctx.shadowBlur = 0
   ctx.stroke()
 
-  ctx.fillStyle = COLORS.padHighlight
+  ctx.strokeStyle = 'rgba(185, 239, 131, 0.28)'
+  ctx.lineWidth = 1
   ctx.beginPath()
-  ctx.ellipse(state.paddleX - 8, padY - 4 + bob, PADDLE_WIDTH / 2, 9, 0, 0, Math.PI * 2)
-  ctx.fill()
+  ctx.moveTo(state.paddleX - PADDLE_WIDTH / 2, padY - 1 + bob)
+  ctx.quadraticCurveTo(
+    state.paddleX - 8,
+    padY - 7 + bob,
+    state.paddleX + PADDLE_WIDTH / 2,
+    padY - 2 + bob,
+  )
+  ctx.stroke()
 
   const size = 64
   const img = assets.frong
   if (img) {
     ctx.drawImage(img, state.paddleX - size / 2, PADDLE_Y - size + 8 + bob, size, size)
   } else {
-    ctx.fillStyle = COLORS.accent
+    const frogGradient = ctx.createRadialGradient(
+      state.paddleX - 8,
+      PADDLE_Y - 30 + bob,
+      2,
+      state.paddleX,
+      PADDLE_Y - 22 + bob,
+      25,
+    )
+    frogGradient.addColorStop(0, COLORS.accentBright)
+    frogGradient.addColorStop(1, COLORS.accent)
+    ctx.fillStyle = frogGradient
     ctx.beginPath()
     ctx.arc(state.paddleX, PADDLE_Y - 22 + bob, 24, 0, Math.PI * 2)
     ctx.fill()
@@ -235,6 +359,7 @@ function drawPadAndFrong(
     ctx.arc(state.paddleX + 9, PADDLE_Y - 30 + bob, 4, 0, Math.PI * 2)
     ctx.fill()
   }
+  ctx.restore()
 }
 
 /** Waterline + gentle ripples around the pad. */
@@ -273,6 +398,19 @@ function drawFly(ctx: CanvasRenderingContext2D, fly: Fly, tick: number, reduced:
   ctx.save()
   ctx.translate(fly.x, fly.y)
   ctx.fillStyle = FLY_COLORS[fly.type]
+  ctx.shadowColor = FLY_COLORS[fly.type]
+  ctx.shadowBlur = reduced ? 0 : fly.type === 'queen' ? 12 : 5
+
+  if (!reduced) {
+    ctx.globalAlpha = 0.14
+    ctx.strokeStyle = FLY_COLORS[fly.type]
+    ctx.lineWidth = 1
+    ctx.beginPath()
+    ctx.moveTo(0, -r * 1.5)
+    ctx.lineTo(0, -r * 3.1)
+    ctx.stroke()
+    ctx.globalAlpha = 1
+  }
 
   switch (fly.type) {
     case 'gnat': {
@@ -343,5 +481,12 @@ function drawFly(ctx: CanvasRenderingContext2D, fly: Fly, tick: number, reduced:
       break
     }
   }
+  ctx.shadowBlur = 0
+  ctx.globalAlpha = 0.55
+  ctx.fillStyle = COLORS.ink
+  ctx.beginPath()
+  ctx.arc(-r * 0.2, -r * 0.24, Math.max(0.7, r * 0.13), 0, Math.PI * 2)
+  ctx.fill()
+  ctx.globalAlpha = 1
   ctx.restore()
 }

@@ -157,8 +157,20 @@ export default function PondGuardianApp({ onExit }: ArcadeGameRuntimeProps) {
           ref={attractRef}
           tabIndex={-1}
           className={styles.attract + ' ' + styles.screenIn}
-          aria-labelledby="pond-guardian-title"
+          role="region"
+          aria-label="Pond Guardian mission briefing"
+          data-surface="pond-guardian"
         >
+          <div className={styles.missionHeader}>
+            <div>
+              <span className={styles.missionCode}>MISSION // HOLD THE CENTER</span>
+              <strong>PROTECT THE FROG</strong>
+            </div>
+            <span className={styles.missionStatus}>
+              <span className={styles.missionDot} aria-hidden="true" />
+              LOCAL DEFENSE
+            </span>
+          </div>
           <div className={styles.attractHero}>
             <img
               className={styles.heroArt}
@@ -176,6 +188,20 @@ export default function PondGuardianApp({ onExit }: ArcadeGameRuntimeProps) {
               </p>
             </div>
             <span className={styles.previewLabel}>Original 3D visual target · 4:3</span>
+          </div>
+          <div className={styles.missionStats} aria-label="Mission telemetry">
+            <div>
+              <strong>90 SEC</strong>
+              <span>hold the line</span>
+            </div>
+            <div>
+              <strong>3 PHASES</strong>
+              <span>pressure escalates</span>
+            </div>
+            <div>
+              <strong>4 THREATS</strong>
+              <span>read the silhouettes</span>
+            </div>
           </div>
           <div className={styles.objective}>
             <span className={styles.objectiveKicker}>Primary objective · 90 seconds</span>
@@ -204,11 +230,16 @@ export default function PondGuardianApp({ onExit }: ArcadeGameRuntimeProps) {
             </div>
             <div className={styles.threatCard}>
               <span className={styles.threatIndex}>02</span>
+              <strong>Leaper</strong>
+              <span>Sudden lunges</span>
+            </div>
+            <div className={styles.threatCard}>
+              <span className={styles.threatIndex}>03</span>
               <strong>Sporecaster</strong>
               <span>Curved spores + needles</span>
             </div>
             <div className={styles.threatCard}>
-              <span className={styles.threatIndex}>03</span>
+              <span className={styles.threatIndex}>04</span>
               <strong>Brute</strong>
               <span>Expanding shockwave</span>
             </div>
@@ -229,7 +260,24 @@ export default function PondGuardianApp({ onExit }: ArcadeGameRuntimeProps) {
       )}
 
       {screen === 'run' && (
-        <div ref={runRef} tabIndex={-1} className={styles.run} aria-label="Pond Guardian game run">
+        <div
+          ref={runRef}
+          tabIndex={-1}
+          className={styles.run}
+          role="region"
+          aria-label="Pond Guardian live defense"
+          data-surface="pond-guardian"
+        >
+          <div className={styles.runHeader}>
+            <div>
+              <span className={styles.missionCode}>DEFENSE LOOP / LIVE</span>
+              <strong>KEEP THE FROG ALIVE</strong>
+            </div>
+            <span className={styles.phaseBeacon} data-phase={hud.phase}>
+              <span className={styles.missionDot} aria-hidden="true" />
+              PHASE {hud.phase} / 3
+            </span>
+          </div>
           <div className={styles.stageWrap}>
             <div className={styles.hud} aria-label="Game status">
               <div className={styles.hudBrand}>
@@ -244,8 +292,19 @@ export default function PondGuardianApp({ onExit }: ArcadeGameRuntimeProps) {
                       {hud.frogHealth}/{hud.frogMaxHealth}
                     </strong>
                   </div>
-                  <div className={styles.meter} aria-hidden="true">
-                    <span style={{ width: `${(hud.frogHealth / hud.frogMaxHealth) * 100}%` }} />
+                  <div
+                    className={styles.meter}
+                    role="progressbar"
+                    aria-label="Frog health"
+                    aria-valuemin={0}
+                    aria-valuemax={hud.frogMaxHealth}
+                    aria-valuenow={hud.frogHealth}
+                    aria-valuetext={`${hud.frogHealth} of ${hud.frogMaxHealth} health`}
+                  >
+                    <span
+                      aria-hidden="true"
+                      style={{ width: `${(hud.frogHealth / hud.frogMaxHealth) * 100}%` }}
+                    />
                   </div>
                 </div>
                 <div className={styles.hudStat}>
@@ -255,7 +314,11 @@ export default function PondGuardianApp({ onExit }: ArcadeGameRuntimeProps) {
                       {hud.playerHealth}/{hud.playerMaxHealth}
                     </strong>
                   </div>
-                  <div className={styles.pips} aria-hidden="true">
+                  <div
+                    className={styles.pips}
+                    role="img"
+                    aria-label={`Guard health ${hud.playerHealth} of ${hud.playerMaxHealth}`}
+                  >
                     {Array.from({ length: hud.playerMaxHealth }, (_, index) => (
                       <span key={index} className={index < hud.playerHealth ? styles.pipOn : ''} />
                     ))}
@@ -285,15 +348,23 @@ export default function PondGuardianApp({ onExit }: ArcadeGameRuntimeProps) {
                 Pause
               </button>
             </div>
-            <div className={styles.phaseBar} aria-label={`Phase ${hud.phase} of 3`}>
+            <div className={styles.phaseBar} role="group" aria-label={`Phase ${hud.phase} of 3`}>
               <div className={styles.phaseMeta}>
                 <span>Phase {hud.phase}/3</span>
                 <span>
                   {hud.threats} threats · {hud.projectiles} hazards
                 </span>
               </div>
-              <div className={styles.phaseTrack} aria-hidden="true">
-                <span style={{ width: `${hud.phaseProgress}%` }} />
+              <div
+                className={styles.phaseTrack}
+                role="progressbar"
+                aria-label="Phase progress"
+                aria-valuemin={0}
+                aria-valuemax={100}
+                aria-valuenow={Math.round(hud.phaseProgress)}
+                aria-valuetext={`${Math.round(hud.phaseProgress)} percent through phase ${hud.phase}`}
+              >
+                <span aria-hidden="true" style={{ width: `${hud.phaseProgress}%` }} />
               </div>
             </div>
             <PondGuardianStage
@@ -364,6 +435,12 @@ export default function PondGuardianApp({ onExit }: ArcadeGameRuntimeProps) {
               </div>
             )}
           </div>
+          {announce && !paused && (
+            <div className={styles.eventSignal} aria-hidden="true">
+              <span className={styles.signalDot} aria-hidden="true" />
+              {announce}
+            </div>
+          )}
           <p className={styles.help}>
             Move, aim and strike. Protect the frog; reduced-motion mode only removes cosmetic shake
             and glow.
@@ -372,7 +449,22 @@ export default function PondGuardianApp({ onExit }: ArcadeGameRuntimeProps) {
       )}
 
       {screen === 'results' && result !== null && (
-        <div className={styles.results + ' ' + styles.screenIn}>
+        <div
+          className={styles.results + ' ' + styles.screenIn}
+          role="region"
+          aria-label="Pond Guardian mission results"
+          data-surface="pond-guardian"
+        >
+          <div className={styles.resultsTopline}>
+            <span className={styles.missionCode}>MISSION REPORT / PG-90</span>
+            <span
+              className={
+                result.outcome === 'victory' ? styles.resultStampWin : styles.resultStampLost
+              }
+            >
+              {result.outcome === 'victory' ? 'CENTER SECURED' : 'CENTER BREACHED'}
+            </span>
+          </div>
           <div className={styles.resultHero}>
             <p className={styles.eyebrow}>Run complete · local record</p>
             <h3
