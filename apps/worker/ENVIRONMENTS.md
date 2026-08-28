@@ -44,6 +44,38 @@ npx wrangler d1 migrations apply frong-catch-production --env production
 
 No database IDs, contract addresses, or account IDs are invented here.
 
+### 2.1 Pre-deploy guard — run `npm run check:d1` after supplying a real UUID
+
+Before any remote `d1 migrations apply` / `wrangler deploy`, run the local
+guard (from `apps/worker`, Node only, no network, no Wrangler account
+needed):
+
+```
+npm run check:d1
+```
+
+It reads **only the checked-in `wrangler.json`** and exits **nonzero (1)**
+while the checked environment's `database_id` is still the literal
+`REPLACE_WITH_D1_DATABASE_ID_*` placeholder (or is blank/missing/not a
+UUID), so an unresolved binding can never silently reach a remote apply.
+The default target is the `staging` environment; other modes:
+
+```
+npm run check:d1 -- --env production   # one named env block
+npm run check:d1 -- --all              # local (top-level) + every env block
+```
+
+**Timing:** run it only after a real D1 UUID (from
+`npx wrangler d1 create …`) has been pasted over the placeholder. While
+the repo intentionally ships placeholders the command fails by design —
+that nonzero result is the guard working, not a broken build. The guard is
+deliberately **not** part of `npm test` / `npm run typecheck`, so the
+normal commands stay green with placeholders present. Validation logic is
+the pure, Worker-safe `src/deployment/validateD1Binding.ts`; the Node-only
+CLI wrapper is `scripts/check-d1-ids.ts`. This task did **not** create,
+migrate, or deploy any D1 database — the guard was added and verified
+against the placeholder state only.
+
 ## 3. Non-secret Worker `vars` (safe to commit; all values are strings)
 
 | Var                                                  | local / staging value                                            | production value                                | Notes                                                                                                               |
