@@ -868,3 +868,295 @@
     animation: none;
   }
 }
+
+/* Pond Guardian visual slice — an operational field dossier. */
+.attract[data-surface='pond-guardian'] {
+  gap: clamp(14px, 2.4vw, 22px);
+}
+
+.missionHeader,
+.runHeader,
+.resultsTopline {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  width: 100%;
+  font-family: var(--font-mono);
+}
+
+.missionHeader > div,
+.runHeader > div {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  min-width: 0;
+}
+
+.missionCode {
+  color: #f1c45d;
+  font-size: 0.63rem;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  line-height: 1.2;
+  text-transform: uppercase;
+}
+
+.missionHeader strong,
+.runHeader strong {
+  overflow: hidden;
+  color: #fff2c0;
+  font-size: 0.82rem;
+  letter-spacing: 0.08em;
+  text-overflow: ellipsis;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+.missionStatus,
+.phaseBeacon,
+.resultStampWin,
+.resultStampLost {
+  display: inline-flex;
+  align-items: center;
+  flex: 0 0 auto;
+  gap: 7px;
+  padding: 7px 10px;
+  border: 1px solid rgba(220, 255, 145, 0.28);
+  border-radius: 999px;
+  background: rgba(101, 154, 53, 0.13);
+  color: #dcff91;
+  font-size: 0.61rem;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+.missionDot,
+.signalDot {
+  display: inline-block;
+  width: 7px;
+  height: 7px;
+  flex: 0 0 auto;
+  border-radius: 50%;
+  background: currentColor;
+  box-shadow: 0 0 10px currentColor;
+  animation: missionPulse 1.8s ease-in-out infinite;
+}
+
+@keyframes missionPulse {
+  0%,
+  100% {
+    opacity: 0.55;
+    transform: scale(0.84);
+  }
+
+  50% {
+    opacity: 1;
+    transform: scale(1.08);
+  }
+}
+
+.missionStats {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  width: 100%;
+  overflow: hidden;
+  border: 1px solid rgba(245, 205, 102, 0.24);
+  border-radius: 14px;
+  background:
+    linear-gradient(120deg, rgba(20, 59, 38, 0.52), rgba(2, 12, 8, 0.7)), rgba(0, 0, 0, 0.22);
+  box-shadow: inset 0 1px 0 rgba(255, 239, 167, 0.07);
+}
+
+.missionStats > div {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  min-width: 0;
+  padding: 13px 16px;
+}
+
+.missionStats > div + div::before {
+  position: absolute;
+  top: 14px;
+  bottom: 14px;
+  left: 0;
+  width: 1px;
+  background: rgba(245, 205, 102, 0.18);
+  content: '';
+}
+
+.missionStats strong {
+  color: #fff1b3;
+  font-family: var(--font-mono);
+  font-size: clamp(0.82rem, 2vw, 1.02rem);
+  letter-spacing: 0.06em;
+}
+
+.missionStats span {
+  overflow: hidden;
+  color: var(--ink-faint);
+  font-size: 0.68rem;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.run[data-surface='pond-guardian'] {
+  gap: 10px;
+  padding-top: 12px;
+}
+
+.runHeader {
+  padding: 2px 2px 0;
+}
+
+.phaseBeacon {
+  border-color: rgba(245, 205, 102, 0.32);
+  background: rgba(245, 196, 91, 0.1);
+  color: #ffe08a;
+}
+
+.phaseBeacon[data-phase='2'] {
+  border-color: rgba(150, 227, 106, 0.34);
+  background: rgba(109, 166, 66, 0.13);
+  color: #c9ff8a;
+}
+
+.phaseBeacon[data-phase='3'] {
+  border-color: rgba(232, 113, 173, 0.36);
+  background: rgba(177, 62, 125, 0.14);
+  color: #ffb1d4;
+}
+
+.run[data-surface='pond-guardian'] .stageWrap {
+  box-shadow:
+    0 30px 70px -36px rgba(0, 0, 0, 0.96),
+    0 0 62px -28px rgba(225, 242, 104, 0.9),
+    inset 0 0 0 1px rgba(255, 255, 255, 0.025);
+}
+
+.run[data-surface='pond-guardian'] .hud {
+  border-color: rgba(245, 210, 117, 0.34);
+}
+
+.eventSignal {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  min-height: 34px;
+  padding: 8px 11px;
+  border: 1px solid rgba(245, 205, 102, 0.24);
+  border-radius: 10px;
+  background: rgba(13, 37, 24, 0.74);
+  color: #fff0ad;
+  font-family: var(--font-mono);
+  font-size: 0.68rem;
+  letter-spacing: 0.04em;
+}
+
+.signalDot {
+  color: #f5c45d;
+  animation-duration: 1.15s;
+}
+
+.results[data-surface='pond-guardian'] {
+  gap: 16px;
+}
+
+.resultsTopline {
+  padding: 2px 2px 0;
+}
+
+.resultStampWin,
+.resultStampLost {
+  border-color: rgba(220, 255, 145, 0.32);
+  color: #dcff91;
+}
+
+.resultStampLost {
+  border-color: rgba(255, 142, 118, 0.32);
+  background: rgba(160, 54, 45, 0.12);
+  color: #ffad9b;
+}
+
+.results[data-surface='pond-guardian'] .resultHero {
+  min-height: 300px;
+  border-color: rgba(245, 205, 102, 0.4);
+}
+
+.meter[role='progressbar'],
+.phaseTrack[role='progressbar'] {
+  outline: none;
+}
+
+.attract[data-surface='pond-guardian'] .threatGrid {
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+
+@media (max-width: 600px) {
+  .missionHeader,
+  .runHeader,
+  .resultsTopline {
+    align-items: flex-start;
+    flex-wrap: wrap;
+    gap: 9px;
+  }
+
+  .missionStatus,
+  .phaseBeacon,
+  .resultStampWin,
+  .resultStampLost {
+    padding: 6px 8px;
+    font-size: 0.56rem;
+  }
+
+  .missionStats {
+    grid-template-columns: 1fr;
+  }
+
+  .attract[data-surface='pond-guardian'] .threatGrid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .missionStats > div {
+    padding: 11px 13px;
+  }
+
+  .missionStats > div + div {
+    border-top: 1px solid rgba(245, 205, 102, 0.16);
+  }
+
+  .missionStats > div + div::before {
+    display: none;
+  }
+
+  .missionStats span {
+    white-space: normal;
+  }
+
+  .runHeader strong {
+    font-size: 0.73rem;
+  }
+
+  .eventSignal {
+    font-size: 0.61rem;
+  }
+
+  .results[data-surface='pond-guardian'] .resultHero {
+    min-height: 260px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .missionDot,
+  .signalDot {
+    animation: none;
+  }
+
+  .meter span,
+  .phaseTrack span {
+    transition: none;
+  }
+}
