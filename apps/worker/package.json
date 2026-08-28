@@ -6,7 +6,8 @@
   "description": "FRONG Catch Cloudflare Worker scaffold: GET /health plus a staging (testnet 46630) / production (mainnet 4663) environment skeleton. Dev-only toolchain deps: TypeScript, Workers types, Node types.",
   "scripts": {
     "typecheck": "tsc --noEmit -p tsconfig.json && tsc --noEmit -p tsconfig.test.json",
-    "test": "node --experimental-strip-types --test test/*.test.ts"
+    "test": "node --experimental-strip-types --test test/*.test.ts",
+    "check:d1": "node --experimental-strip-types scripts/check-d1-ids.ts"
   },
   "dependencies": {
     "viem": "^2.55.18"
