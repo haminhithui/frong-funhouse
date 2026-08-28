@@ -1,13 +1,5 @@
-import type {
-  ConsumePaymentInput,
-  PaymentRecord,
-  PaymentsRepo,
-} from './repo.ts'
-import type {
-  CreateSessionInput,
-  SessionRecord,
-  SessionsRepo,
-} from '../sessions/repo.ts'
+import type { ConsumePaymentInput, PaymentRecord, PaymentsRepo } from './repo.ts'
+import type { CreateSessionInput, SessionRecord, SessionsRepo } from '../sessions/repo.ts'
 
 const SUPPORTED_CHAIN_IDS = new Set([46630, 4663])
 const SESSION_STATUSES = new Set(['active', 'completed', 'expired', 'consumed'])
@@ -23,7 +15,6 @@ export interface PaymentSessionInput {
   buildHash: string
   /** Positive safe integer session lifetime in milliseconds. */
   ttlMs: number
-
 }
 
 export interface PaymentVerificationRequest {
@@ -37,9 +28,7 @@ export interface PaymentVerificationRequest {
  * server-derived D1 payment input. Client input is limited to identity fields;
  * amount, chain, block, and confirmation metadata must come from this seam.
  */
-export type PaymentVerifier = (
-  request: PaymentVerificationRequest,
-) => Promise<ConsumePaymentInput>
+export type PaymentVerifier = (request: PaymentVerificationRequest) => Promise<ConsumePaymentInput>
 
 export interface PaymentSessionDeps {
   verifyPayment: PaymentVerifier
@@ -78,11 +67,7 @@ function isRecord(value: unknown): value is Record<string, unknown> {
 }
 
 function isWalletAddress(value: unknown): value is string {
-  return (
-    typeof value === 'string' &&
-    /^0x[0-9a-fA-F]{40}$/.test(value) &&
-    !/^0x0{40}$/i.test(value)
-  )
+  return typeof value === 'string' && /^0x[0-9a-fA-F]{40}$/.test(value) && !/^0x0{40}$/i.test(value)
 }
 
 function isTransactionHash(value: unknown): value is string {
@@ -105,8 +90,19 @@ function infrastructure(stage: PaymentSessionFailureStage): PaymentSessionResult
   return { ok: false, reason: 'infrastructure', stage }
 }
 
-function parseInput(value: unknown, now: () => string):
-  | { ok: true; input: PaymentSessionInput; player: string; txHash: string; at: string; expiresAt: string; seed: number }
+function parseInput(
+  value: unknown,
+  now: () => string,
+):
+  | {
+      ok: true
+      input: PaymentSessionInput
+      player: string
+      txHash: string
+      at: string
+      expiresAt: string
+      seed: number
+    }
   | { ok: false } {
   if (!isRecord(value)) return { ok: false }
   const { txHash, paymentId, player, buildHash, ttlMs } = value
@@ -148,9 +144,11 @@ function parseInput(value: unknown, now: () => string):
 }
 
 function defaultSeed(): number {
-  const source = (globalThis as {
-    crypto?: { getRandomValues: (array: Uint32Array) => Uint32Array }
-  }).crypto
+  const source = (
+    globalThis as {
+      crypto?: { getRandomValues: (array: Uint32Array) => Uint32Array }
+    }
+  ).crypto
   if (!source?.getRandomValues) throw new Error('WebCrypto unavailable')
   const values = source.getRandomValues(new Uint32Array(1))
   return values[0] ?? -1
@@ -162,7 +160,8 @@ function validVerifiedInput(
 ): value is ConsumePaymentInput {
   if (!isRecord(value)) return false
   if (!SUPPORTED_CHAIN_IDS.has(value.chainId as number)) return false
-  if (!isTransactionHash(value.txHash) || value.txHash.toLowerCase() !== expected.txHash) return false
+  if (!isTransactionHash(value.txHash) || value.txHash.toLowerCase() !== expected.txHash)
+    return false
   if (!isWalletAddress(value.player) || value.player.toLowerCase() !== expected.player) return false
   if (value.paymentId !== expected.paymentId || !isDecimal(value.amountWei)) return false
   const blockNumber = value.blockNumber

@@ -81,14 +81,20 @@ function validVerifiedInput(overrides: Partial<ConsumePaymentInput> = {}): Consu
   }
 }
 
-function makeDeps(options: {
-  paymentOutcome?: ConsumePaymentResult
-  sessionOutcome?: CreateSessionResult
-  verify?: PaymentSessionDeps['verifyPayment']
-  seed?: () => number
-  onPayment?: (input: ConsumePaymentInput) => void
-  onSession?: (input: CreateSessionInput) => void
-} = {}): PaymentSessionDeps & { paymentCalls: ConsumePaymentInput[]; sessionCalls: CreateSessionInput[]; verifyCalls: string[] } {
+function makeDeps(
+  options: {
+    paymentOutcome?: ConsumePaymentResult
+    sessionOutcome?: CreateSessionResult
+    verify?: PaymentSessionDeps['verifyPayment']
+    seed?: () => number
+    onPayment?: (input: ConsumePaymentInput) => void
+    onSession?: (input: CreateSessionInput) => void
+  } = {},
+): PaymentSessionDeps & {
+  paymentCalls: ConsumePaymentInput[]
+  sessionCalls: CreateSessionInput[]
+  verifyCalls: string[]
+} {
   const paymentCalls: ConsumePaymentInput[] = []
   const sessionCalls: CreateSessionInput[] = []
   const verifyCalls: string[] = []
@@ -137,7 +143,10 @@ function makeDeps(options: {
   }
 }
 
-function assertInfrastructure(result: Awaited<ReturnType<typeof createPaymentSession>>, stage: string): void {
+function assertInfrastructure(
+  result: Awaited<ReturnType<typeof createPaymentSession>>,
+  stage: string,
+): void {
   assert.equal(result.ok, false)
   if (result.ok) return
   assert.equal(result.reason, 'infrastructure')
@@ -252,7 +261,11 @@ test('verifier identity mismatch fails closed before payment persistence', async
 })
 
 test('verifier exception is generic infrastructure failure', async () => {
-  const deps = makeDeps({ verify: async () => { throw new Error('do not expose this') } })
+  const deps = makeDeps({
+    verify: async () => {
+      throw new Error('do not expose this')
+    },
+  })
   const result = await createPaymentSession(validInput(), deps)
   assertInfrastructure(result, 'verification')
 })
@@ -299,11 +312,18 @@ test('invalid seed fails before verifier and payment persistence', async () => {
 })
 
 test('mismatched payment or session records fail closed', async () => {
-  const badPayment = makeDeps({ paymentOutcome: { outcome: 'accepted', record: { ...paymentRecord, player: '0xBb00000000000000000000000000000000000002' } } })
+  const badPayment = makeDeps({
+    paymentOutcome: {
+      outcome: 'accepted',
+      record: { ...paymentRecord, player: '0xBb00000000000000000000000000000000000002' },
+    },
+  })
   const paymentResult = await createPaymentSession(validInput(), badPayment)
   assertInfrastructure(paymentResult, 'payment')
 
-  const badSession = makeDeps({ sessionOutcome: { outcome: 'created', record: { ...sessionRecord, buildHash: 'b'.repeat(64) } } })
+  const badSession = makeDeps({
+    sessionOutcome: { outcome: 'created', record: { ...sessionRecord, buildHash: 'b'.repeat(64) } },
+  })
   const sessionResult = await createPaymentSession(validInput(), badSession)
   assertInfrastructure(sessionResult, 'session')
 })

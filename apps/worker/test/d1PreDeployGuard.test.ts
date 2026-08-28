@@ -76,9 +76,11 @@ test('guard: the top-level config resolves as the local environment and passes w
 })
 
 test('guard: the literal REPLACE_WITH_D1_DATABASE_ID_LOCAL fails for the top-level config', () => {
-  const config = wranglerConfig({ d1_databases: [
-    { binding: 'DB', database_name: 'frong-catch-local-fixture', database_id: PLACEHOLDER_LOCAL },
-  ] })
+  const config = wranglerConfig({
+    d1_databases: [
+      { binding: 'DB', database_name: 'frong-catch-local-fixture', database_id: PLACEHOLDER_LOCAL },
+    ],
+  })
   const res = validateD1DatabaseBinding(config, 'local')
   assert.equal(res.ok, false)
   assert.deepEqual(codesOf(res), ['placeholder_database_id'])
@@ -89,7 +91,11 @@ test('guard: the literal REPLACE_WITH_D1_DATABASE_ID_LOCAL fails for the top-lev
 test('guard: the literal REPLACE_WITH_D1_DATABASE_ID_STAGING fails as a placeholder', () => {
   const config = wranglerConfig()
   config.env.staging.d1_databases = [
-    { binding: 'DB', database_name: 'frong-catch-staging-fixture', database_id: PLACEHOLDER_STAGING },
+    {
+      binding: 'DB',
+      database_name: 'frong-catch-staging-fixture',
+      database_id: PLACEHOLDER_STAGING,
+    },
   ]
   const res = validateD1DatabaseBinding(config, 'staging')
   assert.equal(res.ok, false)
@@ -110,7 +116,9 @@ test('guard: a blank/whitespace database_id fails closed', () => {
 
 test('guard: a missing database_id key fails closed', () => {
   const config = wranglerConfig()
-  config.env.staging.d1_databases = [{ binding: 'DB', database_name: 'frong-catch-staging-fixture' }]
+  config.env.staging.d1_databases = [
+    { binding: 'DB', database_name: 'frong-catch-staging-fixture' },
+  ]
   const res = validateD1DatabaseBinding(config, 'staging')
   assert.equal(res.ok, false)
   assert.deepEqual(codesOf(res), ['missing_database_id'])
@@ -147,9 +155,7 @@ test('guard: an unknown environment name fails closed', () => {
 
 test('guard: an environment block without the expected DB binding fails closed', () => {
   const config = wranglerConfig()
-  config.env.staging.d1_databases = [
-    { binding: 'OTHER', database_name: 'x', database_id: UUID_B },
-  ]
+  config.env.staging.d1_databases = [{ binding: 'OTHER', database_name: 'x', database_id: UUID_B }]
   const res = validateD1DatabaseBinding(config, 'staging')
   assert.equal(res.ok, false)
   assert.deepEqual(codesOf(res), ['unknown_binding'])
