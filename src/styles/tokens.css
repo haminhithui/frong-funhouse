@@ -1,44 +1,51 @@
 :root {
-  color-scheme: dark;
+  color-scheme: light;
 
-  /* Palette — dark editorial, warm white ink, one restrained frog green */
-  --bg: #0b0d0c;
-  --bg-raised: #111413;
-  --bg-soft: #161a18;
-  --ink: #ece7dc;
-  --ink-muted: #a39c8f;
-  --ink-faint: #8a8577; /* >=4.5:1 on both --bg and --bg-raised (WCAG AA) */
-  --accent: #9cdb62;
-  --accent-bright: #b9ef83;
-  --accent-ink: #101a08;
-  --accent-soft: rgba(156, 219, 98, 0.09);
-  --accent-line: rgba(185, 239, 131, 0.35);
+  /* Palette — bright field-guide editorial: warm ivory paper, blue-black ink,
+     and exactly two frog accents (deep moss for marks, chartreuse for fills). */
+  --bg: #faf7ee;
+  --bg-raised: #fffdf6;
+  --bg-soft: #f2ecdd;
+  --ink: #132430;
+  --ink-muted: #3d505b;
+  --ink-faint: #546470; /* >=4.5:1 on --bg, --bg-raised and --bg-soft (WCAG AA) */
+  --accent: #3f6b33; /* moss — readable accent text on paper (5.8:1) */
+  --accent-bright: #c8ea52; /* chartreuse — fills only, ink text sits on top */
+  --accent-ink: #132430; /* ink used on chartreuse fills (11.6:1) */
+  --accent-soft: rgba(63, 107, 51, 0.08);
+  --accent-line: rgba(63, 107, 51, 0.38);
+  --accent-wash: rgba(200, 234, 82, 0.42); /* flat plate wash behind hero art */
 
   /* Semantic state colors — one map for success/warning/danger/info */
-  --success: #b9ef83;
-  --warning: #e8c56d;
-  --warning-soft: rgba(232, 197, 109, 0.1);
-  --warning-line: rgba(232, 197, 109, 0.38);
-  --danger: #f2a08c;
-  --danger-soft: rgba(242, 160, 140, 0.1);
-  --danger-line: rgba(242, 160, 140, 0.38);
-  --info: #9cc7e8;
-  --info-soft: rgba(156, 199, 232, 0.1);
-  --info-line: rgba(156, 199, 232, 0.38);
+  --success: #3f6b33;
+  --success-soft: rgba(63, 107, 51, 0.1);
+  --success-line: rgba(63, 107, 51, 0.38);
+  --warning: #8a6114;
+  --warning-soft: rgba(138, 97, 20, 0.1);
+  --warning-line: rgba(138, 97, 20, 0.38);
+  --danger: #a54734;
+  --danger-soft: rgba(165, 71, 52, 0.09);
+  --danger-line: rgba(165, 71, 52, 0.38);
+  --info: #2f6087;
+  --info-soft: rgba(47, 96, 135, 0.09);
+  --info-line: rgba(47, 96, 135, 0.38);
 
-  /* Moss tints sampled from the FRONG PNG palette */
-  --moss-1: #1d2a22;
-  --moss-2: #142018;
-  --ring: rgba(185, 239, 131, 0.28);
+  /* Moss paper tints for the FRONG token frame */
+  --moss-1: #ecefd9;
+  --moss-2: #e2e8cc;
+  --ring: rgba(63, 107, 51, 0.32);
 
-  /* Lines and surfaces — subtle, never loud */
-  --line: rgba(236, 231, 220, 0.1);
-  --line-strong: rgba(236, 231, 220, 0.18);
-  --shadow-soft: 0 1px 0 rgba(0, 0, 0, 0.35), 0 12px 32px -16px rgba(0, 0, 0, 0.55);
+  /* Lines and surfaces — hairline rules, print-like shadows, no glass */
+  --line: rgba(19, 36, 48, 0.12);
+  --line-strong: rgba(19, 36, 48, 0.24);
+  --shadow-soft: 0 1px 0 rgba(19, 36, 48, 0.05), 0 16px 32px -20px rgba(19, 36, 48, 0.3);
 
-  /* Type */
+  /* Type — system stacks only; serif carries the editorial voice */
   --font-sans:
     'Inter', 'Inter Variable', system-ui, 'Segoe UI', 'Helvetica Neue', Arial, sans-serif;
+  --font-serif:
+    'Iowan Old Style', 'Palatino Linotype', Palatino, 'Book Antiqua', Georgia, 'Times New Roman',
+    serif;
   --font-mono:
     ui-monospace, 'Cascadia Mono', 'SFMono-Regular', Consolas, 'Liberation Mono', monospace;
 
@@ -46,13 +53,20 @@
   --gutter: clamp(20px, 4vw, 40px);
   --container: 1200px;
   --section-y: clamp(56px, 8vh, 96px);
-  --radius-sm: 8px;
-  --radius-md: 14px;
-  --radius-lg: 18px;
+  --radius-sm: 6px;
+  --radius-md: 10px;
+  --radius-lg: 14px;
   --radius-pill: 999px;
 
+  /* Editorial layout — a 12-column page grid under every section */
+  --grid-columns: 12;
+  --grid-gap: clamp(20px, 3vw, 32px);
+
+  /* Chrome */
+  --header-height: 72px;
+
   /* Focus */
-  --focus-ring: var(--accent-bright);
+  --focus-ring: var(--accent);
   --focus-ring-width: 2px;
 
   /* Touch */

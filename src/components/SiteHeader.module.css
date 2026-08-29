@@ -1,25 +1,37 @@
+/* Field-guide masthead: solid warm paper, one hairline rule and a single
+   chartreuse strip. No blur, no glass. */
+
 .header {
   position: sticky;
   top: 0;
-  z-index: 50;
-  background: rgba(11, 13, 12, 0.82);
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
-  border-bottom: 1px solid var(--line);
+  z-index: var(--z-header);
+  background: var(--bg);
+  border-bottom: 1px solid var(--line-strong);
+}
+
+.header::after {
+  content: '';
+  display: block;
+  height: 3px;
+  background: var(--accent-bright);
 }
 
 .inner {
+  position: relative;
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 24px;
-  min-height: 68px;
+  gap: clamp(16px, 3vw, 40px);
+  min-height: var(--header-height);
 }
 
 .brand {
   display: inline-flex;
+  flex-shrink: 0;
   align-items: center;
   gap: 10px;
+  min-height: var(--touch-target);
+  padding-block: 4px;
 }
 
 .brandMark {
@@ -34,35 +46,56 @@
   font-size: 0.95rem;
 }
 
-.nav {
+/* One clear row on desktop: nav first, ecosystem links docked right. */
+.menu {
   display: flex;
-  flex-wrap: wrap;
   align-items: center;
   justify-content: flex-end;
-  gap: 6px 26px;
+  gap: clamp(16px, 2.5vw, 36px);
+  min-width: 0;
+}
+
+.nav {
+  display: flex;
+  flex-wrap: nowrap;
+  align-items: center;
+  justify-content: flex-end;
+  gap: clamp(2px, 1vw, 10px);
 }
 
 .navLink {
   position: relative;
-  padding: 10px 6px;
-  font-size: 0.9rem;
+  display: inline-flex;
+  align-items: center;
+  min-height: var(--touch-target);
+  padding: 8px clamp(6px, 0.8vw, 10px);
+  font-size: 0.875rem;
+  font-weight: 600;
   color: var(--ink-muted);
+  white-space: nowrap;
+  border-radius: var(--radius-sm);
+  text-decoration: none;
+  text-underline-offset: 6px;
+  text-decoration-thickness: 2px;
+  text-decoration-color: var(--accent);
   transition: color var(--speed-fast) var(--ease);
 }
 
-.navLink:hover {
+.navLink:hover,
+.navLink:focus-visible {
   color: var(--ink);
+  text-decoration: underline;
 }
 
 .navLink::after {
-  content: '';
   position: absolute;
-  left: 0;
   right: 100%;
-  bottom: 0;
-  height: 1px;
+  bottom: 5px;
+  left: 0;
+  height: 2px;
   background: var(--accent);
-  transition: right var(--speed-base) var(--ease);
+  content: '';
+  transition: right var(--speed-fast) var(--ease);
 }
 
 .navLink:hover::after,
@@ -70,19 +103,11 @@
   right: 0;
 }
 
-.right {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  justify-content: flex-end;
-  gap: 8px 18px;
-}
-
 .external {
   display: flex;
   align-items: center;
-  gap: 6px 16px;
-  padding-left: 18px;
+  gap: clamp(10px, 1.5vw, 22px);
+  padding-left: clamp(12px, 2vw, 24px);
   border-left: 1px solid var(--line);
 }
 
@@ -90,45 +115,172 @@
   display: inline-flex;
   align-items: center;
   gap: 5px;
+  min-height: var(--touch-target);
   padding: 8px 0;
-  font-size: 0.85rem;
+  font-size: 0.8125rem;
   font-weight: 600;
   color: var(--ink-muted);
+  white-space: nowrap;
   transition: color var(--speed-fast) var(--ease);
 }
 
 .externalLink:hover {
-  color: var(--accent-bright);
+  color: var(--accent);
 }
 
-@media (max-width: 720px) {
+/* Disclosure control — desktop never renders it. */
+.menuButton {
+  display: none;
+}
+
+@media (max-width: 919.98px) {
   .inner {
-    flex-wrap: wrap;
-    padding-block: 12px;
-    gap: 8px 24px;
+    gap: 12px;
+  }
+
+  .menuButton {
+    display: inline-flex;
+    flex-shrink: 0;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    min-height: var(--touch-target);
+    min-width: var(--touch-target);
+    padding: 8px 14px;
+    border: 1px solid var(--line-strong);
+    border-radius: var(--radius-sm);
+    background: var(--bg-raised);
+    font-size: 0.875rem;
+    font-weight: 600;
+    color: var(--ink);
+    transition:
+      border-color var(--speed-fast) var(--ease),
+      color var(--speed-fast) var(--ease);
+  }
+
+  .menuButton:hover {
+    border-color: var(--accent);
+    color: var(--accent);
+  }
+
+  .menuButton[aria-expanded='true'] {
+    border-color: var(--accent);
+    color: var(--accent);
+    background: var(--accent-soft);
+  }
+
+  .menuIcon {
+    display: inline-flex;
+    flex-direction: column;
+    justify-content: center;
+    gap: 4px;
+    width: 18px;
+  }
+
+  .menuIcon span {
+    display: block;
+    height: 2px;
+    border-radius: 1px;
+    background: currentColor;
+    transition: transform var(--speed-base) var(--ease);
+  }
+
+  .menuButton[aria-expanded='true'] .menuIcon span:nth-child(1) {
+    transform: translateY(6px) rotate(45deg);
+  }
+
+  .menuButton[aria-expanded='true'] .menuIcon span:nth-child(2) {
+    opacity: 0;
+  }
+
+  .menuButton[aria-expanded='true'] .menuIcon span:nth-child(3) {
+    transform: translateY(-6px) rotate(-45deg);
+  }
+
+  /* The same two link groups fold into one full-width panel under the row. */
+  .menu {
+    position: absolute;
+    top: 100%;
+    left: calc(var(--gutter) * -1);
+    right: calc(var(--gutter) * -1);
+    z-index: var(--z-overlay);
+    flex-direction: column;
+    align-items: stretch;
+    justify-content: flex-start;
+    gap: 0;
+    padding: 8px var(--gutter) 16px;
+    background: var(--bg);
+    border-bottom: 1px solid var(--line-strong);
+    box-shadow: var(--shadow-soft);
+  }
+
+  .menu[data-open='false'] {
+    display: none;
   }
 
   .nav {
+    flex-direction: column;
+    align-items: stretch;
     justify-content: flex-start;
-    gap: 4px 18px;
+    gap: 0;
   }
 
   .navLink {
-    padding: 13px 6px;
-    font-size: 0.85rem;
+    justify-content: space-between;
+    padding: 10px 8px;
+    font-size: 0.9rem;
+    border-radius: var(--radius-sm);
   }
 
-  .externalLink {
-    /* 12px top+bottom keeps the hit area at the 44px touch target. */
-    padding: 12px 0;
-  }
-
-  .brand {
-    padding: 5px 0;
+  .navLink:hover {
+    background: var(--accent-soft);
+    color: var(--ink);
   }
 
   .external {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 0;
+    margin-top: 8px;
+    padding: 8px 0 0;
+    border-top: 1px solid var(--line);
     border-left: none;
-    padding-left: 0;
+  }
+
+  .externalLink {
+    justify-content: space-between;
+    padding: 10px 8px;
+    font-size: 0.875rem;
+    border-radius: var(--radius-sm);
+  }
+
+  .externalLink:hover {
+    background: var(--accent-soft);
+  }
+}
+
+@media (max-width: 720px) {
+  .externalLink {
+    /* 12px vertical rhythm preserves the 44px touch target. */
+    min-height: var(--touch-target);
+    padding: 12px 0;
+  }
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .menu[data-open='true'] {
+    animation: menu-drop var(--speed-base) var(--ease);
+  }
+
+  @keyframes menu-drop {
+    from {
+      opacity: 0;
+      transform: translateY(-6px);
+    }
+
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
   }
 }

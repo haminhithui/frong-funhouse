@@ -5,7 +5,7 @@ import styles from './WallOfLove.module.css'
 
 export function WallOfLove({ wall }: { wall: WallConfig }) {
   return (
-    <section id="community" className="section">
+    <section id="community" className={'section ' + styles.band}>
       <div className="container">
         <SectionHeading eyebrow={wall.eyebrow} title={wall.title} lede={wall.lede} />
         <ul className={styles.grid}>

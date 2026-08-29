@@ -10,7 +10,7 @@
 
 html {
   scroll-behavior: smooth;
-  scroll-padding-top: 88px;
+  scroll-padding-top: calc(var(--header-height) + 16px);
 }
 
 body {
@@ -70,8 +70,22 @@ p {
 }
 
 ::selection {
-  background: var(--accent);
+  background: var(--accent-bright);
   color: var(--accent-ink);
+}
+
+/* --- Page shell ---------------------------------------------------------- */
+
+.page-shell {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+  min-height: 100dvh;
+  background: var(--bg);
+}
+
+.page-shell > main {
+  flex: 1 0 auto;
 }
 
 .container {
@@ -81,14 +95,21 @@ p {
   padding-inline: var(--gutter);
 }
 
+/* Editorial 12-column page grid — sections compose on top of it. */
+.editorial-grid {
+  display: grid;
+  grid-template-columns: repeat(var(--grid-columns), minmax(0, 1fr));
+  gap: var(--grid-gap);
+}
+
 .section {
   padding-block: var(--section-y);
-  scroll-margin-top: 88px;
+  scroll-margin-top: calc(var(--header-height) + 16px);
 }
 
 .eyebrow {
   font-size: 0.75rem;
-  font-weight: 600;
+  font-weight: 700;
   letter-spacing: 0.18em;
   text-transform: uppercase;
   color: var(--accent);
@@ -107,9 +128,10 @@ p {
 
 .section-title {
   margin-top: 12px;
+  font-family: var(--font-serif);
   font-size: clamp(1.75rem, 3.4vw, 2.5rem);
-  font-weight: 700;
-  letter-spacing: -0.015em;
+  font-weight: 600;
+  letter-spacing: -0.012em;
   line-height: 1.15;
 }
 
@@ -130,9 +152,9 @@ p {
   position: absolute;
   left: 16px;
   top: -64px;
-  z-index: 100;
+  z-index: var(--z-skip);
   padding: 10px 16px;
-  background: var(--accent);
+  background: var(--accent-bright);
   color: var(--accent-ink);
   border-radius: var(--radius-sm);
   font-weight: 600;
@@ -157,7 +179,7 @@ p {
 }
 
 .status-badge--planned {
-  color: var(--accent-bright);
+  color: var(--accent);
   border-color: var(--accent-line);
   background: var(--accent-soft);
 }
@@ -165,7 +187,7 @@ p {
 .status-badge--published {
   color: var(--ink);
   border-color: var(--line-strong);
-  background: rgba(236, 231, 220, 0.06);
+  background: rgba(19, 36, 48, 0.05);
 }
 
 .frong-tile {
@@ -177,12 +199,12 @@ p {
   overflow: hidden;
   background: var(--moss-1);
   border: 1px solid var(--ring);
-  box-shadow: 0 12px 32px -14px rgba(0, 0, 0, 0.6);
+  box-shadow: 0 10px 24px -16px rgba(19, 36, 48, 0.35);
   transition: border-color var(--speed-fast) var(--ease);
 }
 
 .frong-tile:hover {
-  border-color: var(--accent-bright);
+  border-color: var(--accent);
 }
 
 .frong-tile[class*='brandMark'],
@@ -214,12 +236,12 @@ p {
 
 .copy-button:hover {
   border-color: var(--accent);
-  color: var(--accent-bright);
+  color: var(--accent);
 }
 
 .copy-button[data-copied='true'] {
   border-color: var(--accent);
-  color: var(--accent-bright);
+  color: var(--accent);
   background: var(--accent-soft);
 }
 
@@ -259,20 +281,22 @@ p {
   filter: none;
 }
 
+/* Primary action: flat chartreuse plate with a pressed-paper edge —
+   no gradients, no glow. */
 .btn-primary {
-  background: linear-gradient(180deg, var(--accent-bright), var(--accent));
+  background: var(--accent-bright);
   color: var(--accent-ink);
-  box-shadow: 0 8px 24px -12px rgba(156, 219, 98, 0.7);
+  box-shadow: 0 2px 0 rgba(19, 36, 48, 0.22);
 }
 
 .btn-primary:hover:not(:disabled) {
-  filter: brightness(1.06);
-  box-shadow: 0 10px 30px -10px rgba(156, 219, 98, 0.9);
+  filter: brightness(0.97);
+  box-shadow: 0 3px 0 rgba(19, 36, 48, 0.25);
   transform: translateY(-1px);
 }
 
 .btn-secondary {
-  background: rgba(236, 231, 220, 0.03);
+  background: var(--bg-raised);
   border-color: var(--line-strong);
   color: var(--ink);
   font-weight: 600;
@@ -280,7 +304,7 @@ p {
 
 .btn-secondary:hover:not(:disabled) {
   border-color: var(--accent);
-  color: var(--accent-bright);
+  color: var(--accent);
 }
 
 .btn-ghost {
@@ -291,7 +315,7 @@ p {
 .btn-ghost:hover:not(:disabled) {
   border-color: var(--line-strong);
   color: var(--ink);
-  background: rgba(236, 231, 220, 0.03);
+  background: rgba(19, 36, 48, 0.04);
 }
 
 .btn-danger {
@@ -303,7 +327,7 @@ p {
 
 .btn-danger:hover:not(:disabled) {
   border-color: var(--danger);
-  background: rgba(242, 160, 140, 0.16);
+  background: rgba(165, 71, 52, 0.14);
 }
 
 /* Keyboard key hint. */
@@ -314,7 +338,7 @@ p {
   border: 1px solid var(--line-strong);
   border-bottom-width: 2px;
   border-radius: 6px;
-  background: rgba(236, 231, 220, 0.06);
+  background: rgba(19, 36, 48, 0.05);
   font-family: var(--font-mono);
   font-size: 0.75em;
   line-height: 1.5;

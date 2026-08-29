@@ -1,44 +1,119 @@
-.chainNote {
-  margin-top: 32px;
-  padding: 24px 26px;
+/* Field-guide record for the "about" section: a ruled frame, an asymmetric
+   intro measure, and the chain note as a specimen tag — habitat note on the
+   left, contract and ruled fine print in their own column on the right.
+   Every color, face, and radius comes from the shared tokens (paper, ink,
+   moss, chartreuse) so the treatment composes with the light foundation. */
+
+.frame {
+  border-top: 1px solid var(--line-strong);
+  padding-top: clamp(28px, 4vw, 44px);
 }
 
+/* Heading block holds a narrower measure than the record below it, leaving
+   intentional whitespace to the right. */
+.intro {
+  max-width: 46rem;
+}
+
+.chainNote {
+  margin-top: clamp(36px, 5vw, 56px);
+  display: grid;
+  grid-template-columns: minmax(0, 1.25fr) minmax(0, 1fr);
+  background: var(--bg-soft);
+  border: 1px solid var(--line);
+  border-left: 3px solid var(--accent);
+  border-radius: var(--radius-sm);
+}
+
+.noteBody {
+  padding: clamp(22px, 3vw, 30px);
+}
+
+/* Label mirrors the shared eyebrow idiom: small caps with a chartreuse dash. */
 .chainTitle {
+  display: flex;
+  align-items: center;
+  gap: 10px;
   font-size: 0.8125rem;
   font-weight: 700;
   letter-spacing: 0.14em;
   text-transform: uppercase;
+  color: var(--accent);
+}
+
+.chainTitle::before {
+  content: '';
+  display: inline-block;
+  flex-shrink: 0;
+  width: 18px;
+  height: 2px;
+  border-radius: 2px;
+  background: var(--accent);
 }
 
 .chainText {
   margin-top: 12px;
-  max-width: 68ch;
+  max-width: 62ch;
   color: var(--ink-muted);
   font-size: 0.9375rem;
+  line-height: 1.65;
+}
+
+/* Ruled right column: the contract tag vertically centered against the
+   habitat note, with the fine print separated by a hairline. */
+.contractBlock {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  padding: clamp(22px, 3vw, 30px);
+  border-left: 1px solid var(--line);
 }
 
 .contractRow {
-  margin-top: 16px;
   display: flex;
   flex-wrap: wrap;
-  align-items: center;
-  gap: 14px;
+  align-items: stretch;
+  gap: 12px;
 }
 
 .contract {
+  flex: 1 1 260px;
+  display: flex;
+  align-items: center;
+  min-height: var(--touch-target);
   font-family: var(--font-mono);
   font-size: 0.875rem;
+  line-height: 1.5;
   color: var(--ink);
-  padding: 10px 14px;
+  padding: 12px 16px;
   background: var(--bg);
-  border: 1px solid var(--line);
+  border: 1px solid var(--line-strong);
   border-radius: var(--radius-sm);
   overflow-wrap: anywhere;
 }
 
 .fine {
-  margin-top: 12px;
+  margin-top: 14px;
+  padding-top: 12px;
+  border-top: 1px solid var(--line);
   font-size: 0.8125rem;
+  line-height: 1.6;
   color: var(--ink-faint);
   max-width: 72ch;
+}
+
+@media (max-width: 880px) {
+  .intro {
+    max-width: 100%;
+  }
+
+  .chainNote {
+    grid-template-columns: 1fr;
+  }
+
+  /* The ruled divider becomes horizontal when the record stacks. */
+  .contractBlock {
+    border-left: none;
+    border-top: 1px solid var(--line);
+  }
 }

@@ -1,78 +1,111 @@
+/* Field-guide frontispiece: asymmetric 12-column editorial layout —
+   serif headline column on the left, the frog as a large specimen plate
+   set off-axis on the right. Flat paper washes, no gradients, no glow. */
+
 .hero {
-  padding-top: clamp(48px, 8vh, 88px);
-  padding-bottom: clamp(48px, 8vh, 84px);
+  padding-block: clamp(56px, 10vh, 112px);
   border-bottom: 1px solid var(--line);
+  background: var(--bg);
 }
 
 .grid {
-  display: grid;
-  grid-template-columns: minmax(0, 1.05fr) minmax(0, 0.95fr);
-  gap: clamp(32px, 6vw, 72px);
-  align-items: center;
+  align-items: start;
+}
+
+.copy {
+  grid-column: 1 / span 6;
+}
+
+.art {
+  grid-column: 8 / span 5;
+  grid-row: 1;
+  position: relative;
+  justify-self: end;
+  width: 100%;
+  max-width: fit-content;
+  margin-top: clamp(8px, 5vh, 48px);
+  padding: 0 clamp(14px, 2vw, 24px) clamp(14px, 2vw, 24px) 0;
+  display: flex;
+  justify-content: flex-end;
+}
+
+/* Flat chartreuse wash offset behind the plate — a print registration feel. */
+.art::before {
+  content: '';
+  position: absolute;
+  top: clamp(14px, 2vw, 24px);
+  right: 0;
+  bottom: 0;
+  left: clamp(14px, 2vw, 24px);
+  border-radius: var(--radius-lg);
+  background: var(--accent-wash);
+  pointer-events: none;
+}
+
+.frog {
+  position: relative;
+  width: clamp(280px, calc(var(--hero-art, 300px) * 1.75), 600px);
+  max-width: 100%;
+  aspect-ratio: 1;
+  object-fit: cover;
+  border: 1px solid var(--line-strong);
+  border-radius: var(--radius-lg);
+  background: var(--bg-raised);
+  box-shadow: var(--shadow-soft);
 }
 
 .title {
   margin-top: 18px;
-  font-size: clamp(2.4rem, 6.4vw, 4.25rem);
+  font-family: var(--font-serif);
+  font-size: clamp(2.5rem, 5vw, 4.25rem);
   line-height: 1.04;
-  letter-spacing: -0.022em;
-  font-weight: 700;
+  letter-spacing: -0.012em;
+  font-weight: 600;
 }
 
+/* Chartreuse highlighter swatch over the accent word. */
 .accent {
-  color: var(--accent);
+  background: var(--accent-bright);
+  color: var(--accent-ink);
+  padding: 0 0.12em;
+  box-decoration-break: clone;
+  -webkit-box-decoration-break: clone;
 }
 
 .secondLine {
   display: block;
+  font-style: italic;
 }
 
 .support {
   margin-top: 22px;
-  max-width: 52ch;
+  max-width: 50ch;
   font-size: 1.125rem;
   color: var(--ink-muted);
 }
 
 .actions {
-  margin-top: 34px;
+  margin-top: 32px;
   display: flex;
   flex-wrap: wrap;
   gap: 14px;
 }
 
+/* The single primary action carries more weight than the standard button. */
+.cta {
+  padding: 14px 30px;
+  font-size: 1.02rem;
+}
+
+/* Secondary provenance note — set apart under a hairline rule. */
 .plumbingWarning {
-  margin-top: 16px;
+  margin-top: 30px;
+  padding-top: 14px;
+  border-top: 1px solid var(--line);
   font-size: 0.75rem;
+  line-height: 1.55;
   color: var(--ink-faint);
   max-width: 52ch;
-}
-
-.art {
-  position: relative;
-  display: flex;
-  justify-content: center;
-}
-
-.art::before {
-  content: '';
-  position: absolute;
-  inset: 0;
-  margin: auto;
-  width: min(460px, 96%);
-  aspect-ratio: 1;
-  border-radius: 50%;
-  background: radial-gradient(
-    circle,
-    rgba(156, 219, 98, 0.14) 0%,
-    rgba(156, 219, 98, 0.05) 42%,
-    transparent 70%
-  );
-  pointer-events: none;
-}
-
-.frog {
-  filter: drop-shadow(0 24px 48px rgba(0, 0, 0, 0.45));
 }
 
 @media (prefers-reduced-motion: no-preference) {
@@ -88,21 +121,57 @@
   }
 
   50% {
-    transform: translateY(-10px);
+    transform: translateY(-8px);
   }
 }
 
+/* Tablet: keep the plate beside the copy while it still fits. */
+@media (max-width: 1020px) {
+  .copy {
+    grid-column: 1 / span 7;
+  }
+
+  .art {
+    grid-column: 8 / span 5;
+    margin-top: 0;
+  }
+
+  .frog {
+    width: clamp(240px, 36vw, 440px);
+  }
+}
+
+/* Mobile: the frog leads as the focal point, full and centered. */
 @media (max-width: 860px) {
-  .grid {
-    grid-template-columns: 1fr;
+  .hero {
+    padding-top: clamp(40px, 7vh, 64px);
+  }
+
+  .copy,
+  .art {
+    grid-column: 1 / -1;
+    grid-row: auto;
   }
 
   .art {
     order: -1;
+    justify-content: center;
+    justify-self: center;
+    margin-top: 0;
+    margin-bottom: clamp(24px, 4vh, 40px);
+    padding: 0 12px 12px 0;
+  }
+
+  .art::before {
+    top: 12px;
+    left: 12px;
   }
 
   .frog {
-    width: min(200px, 50vw) !important;
-    height: min(200px, 50vw) !important;
+    width: min(78vw, 420px);
+  }
+
+  .title {
+    font-size: clamp(2.25rem, 10vw, 3rem);
   }
 }

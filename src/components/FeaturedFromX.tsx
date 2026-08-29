@@ -7,10 +7,15 @@ export function FeaturedFromX({ featured }: { featured: FeaturedConfig }) {
   return (
     <section id="featured" className="section">
       <div className="container">
-        <SectionHeading eyebrow={featured.eyebrow} title={featured.title} lede={featured.lede} />
-        <div className={styles.wrap}>
+        <SectionHeading
+          eyebrow={featured.eyebrow}
+          title={featured.title}
+          lede={featured.lede}
+          titleId="featured-title"
+        />
+        <figure className={styles.wrap} aria-labelledby="featured-title">
           <XEmbedCard post={featured.post} flush />
-        </div>
+        </figure>
       </div>
     </section>
   )

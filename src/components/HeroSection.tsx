@@ -1,11 +1,15 @@
+import type { CSSProperties } from 'react'
 import type { HeroConfig } from '../types/content'
-import { FrongTile } from './FrongTile'
 import styles from './HeroSection.module.css'
 
 export function HeroSection({ hero }: { hero: HeroConfig }) {
+  // artSize seeds the plate scale; the CSS clamps it into the large,
+  // focal-point range instead of a small floating tile.
+  const artStyle = { '--hero-art': `${hero.artSize}px` } as CSSProperties
+
   return (
     <section id="top" className={styles.hero}>
-      <div className={`container ${styles.grid}`}>
+      <div className={`container editorial-grid ${styles.grid}`}>
         <div className={styles.copy}>
           <p className="eyebrow">{hero.eyebrow}</p>
           <h1 className={styles.title}>
@@ -16,17 +20,19 @@ export function HeroSection({ hero }: { hero: HeroConfig }) {
           </h1>
           <p className={styles.support}>{hero.support}</p>
           <div className={styles.actions}>
-            <a className="btn btn-primary" href={hero.ctaHref}>
+            <a className={`btn btn-primary ${styles.cta}`} href={hero.ctaHref}>
               {hero.ctaLabel}
             </a>
           </div>
           <p className={styles.plumbingWarning}>{hero.disclaimer}</p>
         </div>
         <div className={styles.art} aria-hidden="true">
-          <FrongTile
+          <img
             src={hero.artSrc}
             alt={hero.artAlt}
-            size={hero.artSize}
+            width={hero.artSize}
+            height={hero.artSize}
+            style={artStyle}
             className={styles.frog}
           />
         </div>
