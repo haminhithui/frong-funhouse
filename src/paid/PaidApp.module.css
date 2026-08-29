@@ -41,10 +41,10 @@
 }
 
 .backLink:hover {
-  color: var(--accent-bright);
+  color: var(--accent);
 }
 
 .fee {
-  color: var(--accent-bright);
+  color: var(--accent);
   font-family: var(--font-mono);
 }

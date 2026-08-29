@@ -7,14 +7,16 @@ export function GallerySection({ gallery }: { gallery: GalleryConfig }) {
   return (
     <section id="art" className="section">
       <div className="container">
-        <SectionHeading eyebrow={gallery.eyebrow} title={gallery.title} lede={gallery.lede} />
-        <ul className={styles.grid}>
-          {gallery.posts.map((post) => (
-            <li key={post.id} className={styles.cell}>
-              <XEmbedCard post={post} bare />
-            </li>
-          ))}
-        </ul>
+        <div className={styles.frame}>
+          <SectionHeading eyebrow={gallery.eyebrow} title={gallery.title} lede={gallery.lede} />
+          <ul className={styles.grid}>
+            {gallery.posts.map((post) => (
+              <li key={post.id} className={styles.cell}>
+                <XEmbedCard post={post} bare />
+              </li>
+            ))}
+          </ul>
+        </div>
       </div>
     </section>
   )

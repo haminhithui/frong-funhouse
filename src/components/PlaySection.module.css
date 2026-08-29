@@ -1,11 +1,7 @@
+/* Flat ivory band with hairline edges — no gradient wash. */
 .band {
-  background: linear-gradient(
-    180deg,
-    transparent,
-    rgba(156, 219, 98, 0.03) 18%,
-    rgba(156, 219, 98, 0.03) 82%,
-    transparent
-  );
+  background: var(--bg-soft);
+  border-block: 1px solid var(--line);
 }
 
 .wrap {
@@ -17,12 +13,15 @@
 
 .library {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
-  gap: 16px;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 20px;
   width: 100%;
   max-width: 960px;
+  align-items: start;
 }
 
+/* Arcade cards read as mounted specimen plates: a moss rule across the
+   top of each cream card. Later cards step down for an asymmetric shelf. */
 .card {
   display: flex;
   flex-direction: column;
@@ -31,10 +30,16 @@
   padding: 24px;
   background: var(--bg-raised);
   border: 1px solid var(--line);
+  border-top: 3px solid var(--accent);
   border-radius: var(--radius-md);
   transition:
     border-color var(--speed-fast) var(--ease),
-    box-shadow var(--speed-fast) var(--ease);
+    box-shadow var(--speed-fast) var(--ease),
+    transform var(--speed-fast) var(--ease);
+}
+
+.card + .card {
+  margin-top: 26px;
 }
 
 .cardVisual {
@@ -43,7 +48,7 @@
   height: 150px;
   overflow: hidden;
   border: 1px solid var(--line);
-  border-radius: var(--radius-md);
+  border-radius: var(--radius-sm);
   background: var(--moss-2);
 }
 
@@ -69,7 +74,9 @@
 .card:hover,
 .card:focus-within {
   border-color: var(--accent-line);
+  border-top-color: var(--accent-bright);
   box-shadow: var(--shadow-soft);
+  transform: translateY(-2px);
 }
 
 .cardBadge {
@@ -78,9 +85,9 @@
   gap: 7px;
   padding: 3px 10px;
   border: 1px solid var(--accent-line);
-  border-radius: 999px;
-  background: var(--accent-soft);
-  color: var(--accent-bright);
+  border-radius: var(--radius-pill);
+  background: var(--bg-raised);
+  color: var(--accent);
   font-family: var(--font-mono);
   font-size: 0.6875rem;
   font-weight: 700;
@@ -90,7 +97,8 @@
 }
 
 .cardTitle {
-  font-size: 1.35rem;
+  font-family: var(--font-serif);
+  font-size: 1.45rem;
   font-weight: 700;
   letter-spacing: -0.01em;
 }
@@ -112,4 +120,16 @@
   font-size: 0.8125rem;
   max-width: 60ch;
   margin-inline: auto;
+}
+
+/* One card per row: the shelf step collapses to a level stack. */
+@media (max-width: 640px) {
+  .card + .card {
+    margin-top: 0;
+  }
+
+  .library {
+    gap: 16px;
+    grid-template-columns: 1fr;
+  }
 }

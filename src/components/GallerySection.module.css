@@ -1,23 +1,59 @@
+/* Field-guide plates for the gallery: the first post is the full-measure
+   lead plate on a moss mat with a chartreuse top rule; the remaining posts
+   fall into asymmetric paper mats with hairline frames — a ruled editorial
+   spread, never an equal card grid. All surfaces and rules are shared
+   tokens, so the treatment composes with the light foundation. */
+
+.frame {
+  border-top: 1px solid var(--line-strong);
+  padding-top: clamp(28px, 4vw, 44px);
+}
+
+/* Asymmetric tracks (no equal thirds): the wide track takes the plate, the
+   narrow one the annotation, and auto-placement fills rows below the lead. */
 .grid {
-  margin-top: 28px;
+  margin-top: clamp(32px, 4vw, 48px);
   display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 16px;
+  grid-template-columns: minmax(0, 1.5fr) minmax(0, 1fr);
+  gap: 22px 28px;
   list-style: none;
 }
 
+/* The mat around each bare embed — the embed stays the single inner frame. */
 .cell {
   display: flex;
+  flex-direction: column;
+  padding: clamp(14px, 2vw, 18px);
+  background: var(--bg-soft);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-md);
+  transition: border-color var(--speed-base) var(--ease);
 }
 
-@media (max-width: 1000px) {
+.cell:hover {
+  border-color: var(--accent-line);
+}
+
+/* Lead plate: full measure, moss mat, chartreuse record rule on top. */
+.cell:first-child {
+  grid-column: 1 / -1;
+  padding: clamp(18px, 3vw, 26px);
+  background: var(--moss-1);
+  border-top: 3px solid var(--accent);
+}
+
+@media (max-width: 880px) {
   .grid {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
+    grid-template-columns: 1fr;
+  }
+
+  .cell:first-child {
+    grid-column: auto;
   }
 }
 
-@media (max-width: 860px) {
-  .grid {
-    grid-template-columns: 1fr;
+@media (prefers-reduced-motion: reduce) {
+  .cell {
+    transition: none;
   }
 }

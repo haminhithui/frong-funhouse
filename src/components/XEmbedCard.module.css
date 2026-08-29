@@ -88,7 +88,7 @@
 .fallbackLink {
   font-size: 0.875rem;
   font-weight: 600;
-  color: var(--accent-bright);
+  color: var(--accent);
   text-decoration: underline;
   text-underline-offset: 3px;
 }
@@ -119,5 +119,5 @@
 
 .retryButton:hover {
   border-color: var(--accent);
-  color: var(--accent-bright);
+  color: var(--accent);
 }

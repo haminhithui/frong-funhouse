@@ -15,7 +15,7 @@ export default function App({ config }: { config: SiteConfig }) {
   useAnalyticsScrollRestore(analyticsRoute)
 
   return (
-    <>
+    <div className="page-shell">
       <a className="skip-link" href="#main">
         Skip to content
       </a>
@@ -40,6 +40,6 @@ export default function App({ config }: { config: SiteConfig }) {
         )}
       </main>
       <SiteFooter footer={config.footer} />
-    </>
+    </div>
   )
 }
